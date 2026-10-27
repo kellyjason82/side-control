@@ -384,6 +384,13 @@ img, svg { max-width: 100%; display: block; }
   font: 700 22px/1 var(--font-head);
 }
 
+.how__note {
+  margin-top: var(--s5);
+  font-weight: 600;
+  color: var(--muted);
+  max-width: 60ch;
+}
+
 /* Requirements table: stacked cards on phones, real table on wider screens */
 .req { width: 100%; border-collapse: collapse; }
 .req thead { display: none; }
