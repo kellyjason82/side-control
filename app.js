@@ -511,12 +511,332 @@
       </section>`;
   }
 
+  // Coach view
+  const BELL_SVG = `<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2.5a6.5 6.5 0 0 0-6.5 6.5v3.7l-1.7 2.6A1 1 0 0 0 4.6 17h14.8a1 1 0 0 0 .8-1.7l-1.7-2.6V9A6.5 6.5 0 0 0 12 2.5Zm0 19.5a3 3 0 0 0 2.8-2H9.2a3 3 0 0 0 2.8 2Z"/></svg>`;
+  const TABS = [
+    { id: "diary", label: "Diary" },
+    { id: "money", label: "Money" },
+    { id: "notes", label: "Notes" },
+    { id: "rates", label: "Rates" },
+    { id: "times", label: "Times" }
+  ];
+
   function renderCoach() {
-    return `<p class="demo__empty">Coach view coming in the next step.</p>`;
+    const unread = unreadCount();
+    const owed = owedTotal();
+    const toLog = state.bookings.filter(needsNotes).length;
+    const nextWeek = state.bookings.filter((b) => isUpcoming(b) && b.start < now() + 7 * DAY).length;
+
+    const bell = `<button type="button" class="bell" data-action="bell" aria-expanded="${ui.bellOpen}"
+        aria-label="Notifications${unread ? `, ${unread} unread` : ""}">${BELL_SVG}${unread ? `<span class="bell__badge">${unread}</span>` : ""}</button>`;
+
+    const panel = ui.bellOpen ? `<div class="notif-panel" id="notif-panel">
+        <h4 class="dm-h">Notifications</h4>
+        ${state.notifications.length ? `<ul class="list">${state.notifications.slice().sort((a, b) => b.at - a.at).map((n) =>
+          `<li class="notif${ui.bellWasUnread.includes(n.id) ? " notif--new" : ""}"><p class="notif__text">${esc(n.text)}</p><p class="notif__time">${ago(n.at)}</p></li>`).join("")}</ul>`
+          : `<p class="dm-empty">Nothing yet. Student bookings, confirmations and cancellations show up here.</p>`}
+      </div>` : "";
+
+    const counts = { money: unpaid().length, notes: toLog };
+    const tabs = `<div class="tabs" role="tablist" aria-label="Coach screens">${TABS.map((t) =>
+      `<button type="button" class="tab" role="tab" id="tab-${t.id}" data-action="tab" data-tab="${t.id}" aria-selected="${ui.coachTab === t.id}" aria-controls="coach-panel">${t.label}${counts[t.id] ? `<span class="tab__count">${counts[t.id]}</span>` : ""}</button>`).join("")}</div>`;
+
+    const screens = { diary: coachDiary, money: coachMoney, notes: coachNotes, rates: coachRates, times: coachTimes };
+
+    return `
+      <div class="vhead">
+        <div>
+          <p class="vhead__eyebrow">Coach</p>
+          <p class="vhead__name">Coach ${esc(state.coach.name)}</p>
+          <p class="vhead__meta">${esc(state.coach.belt)} · ${esc(state.coach.academy)} (invented)</p>
+        </div>
+        ${bell}
+      </div>
+      ${panel}
+      <div class="stats">
+        <div class="stat${owed ? " stat--owed" : ""}"><span class="stat__label">Owed to you</span><span class="stat__value">${money(owed)}</span></div>
+        <div class="stat"><span class="stat__label">Notes to log</span><span class="stat__value">${toLog}</span></div>
+        <div class="stat"><span class="stat__label">Booked, next 7 days</span><span class="stat__value">${nextWeek}</span></div>
+      </div>
+      ${tabs}
+      <div class="tabpanel" id="coach-panel" role="tabpanel" aria-labelledby="tab-${ui.coachTab}">
+        ${(screens[ui.coachTab] || coachDiary)()}
+      </div>`;
   }
 
-  function handleCoachAction() {
-    return false;
+  function coachSessionItem(b) {
+    const s = student(b.studentId);
+    const tags = [];
+    let body = "";
+    let actions = "";
+    if (isInProgress(b)) tags.push(tag("On the mat now", "live"));
+    if (isTomorrow(b)) tags.push(tag("Tomorrow", "tomorrow"));
+    tags.push(b.confirmed ? tag("Confirmed", "ok") : tag("Not confirmed yet", "muted"));
+
+    if (isTomorrow(b)) {
+      body += `<div class="wa">
+          <a class="btn btn--wa" href="${esc(waLink(reminderMessage(b)))}" target="_blank" rel="noopener noreferrer" data-wa="reminder" data-id="${b.id}">Send reminder on WhatsApp</a>
+          <p class="wa-note">Opens WhatsApp with the message written. You press send.</p>
+        </div>`;
+    }
+    if (isUpcoming(b)) {
+      if (!b.confirmed) actions += `<button type="button" class="btn btn--quiet" data-action="c-confirm" data-id="${b.id}">Mark confirmed</button>`;
+      actions += `<button type="button" class="btn btn--quiet" data-action="ask-cancel" data-id="${b.id}">Cancel</button>`;
+    }
+    if (ui.cancelAsk === b.id) {
+      actions = "";
+      body += cancelAsk(b, "c");
+    }
+    return item({
+      when: whenLabel(b.start), who: `${esc(s.name)} · ${esc(s.belt)}`, price: money(b.price),
+      tags, body, actions, cls: isTomorrow(b) ? "item--tomorrow" : ""
+    });
+  }
+
+  function coachDiary() {
+    const live = state.bookings.filter((b) => isUpcoming(b) || isInProgress(b)).sort(byStart);
+    const today = live.filter((b) => daysFromToday(b.start) === 0);
+    const tomorrow = live.filter((b) => daysFromToday(b.start) === 1);
+    const later = live.filter((b) => daysFromToday(b.start) >= 2);
+    const cancelled = state.bookings
+      .filter((b) => b.status === "cancelled" && b.start > now() - 7 * DAY).sort(byStartDesc);
+
+    const group = (title, list, empty) => `<h4 class="dm-sub">${title}</h4>${list.length
+      ? `<ul class="list">${list.map(coachSessionItem).join("")}</ul>` : `<p class="dm-empty">${empty}</p>`}`;
+
+    const cancelHTML = cancelled.length ? `<h4 class="dm-sub">Recent cancellations</h4><ul class="list">${cancelled.map((b) => {
+      const s = student(b.studentId);
+      return item({
+        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name), price: money(b.price),
+        tags: [isLateCancel(b) ? tag("Late cancel", "late") : tag("Cancelled", "muted")],
+        body: `<p class="item__sub">Cancelled by ${b.cancelledBy === "coach" ? "you" : "the student"}, ${Math.max(0, Math.round((b.start - b.cancelledAt) / HOUR))} hours before the start.</p>`,
+        cls: "item--cancelled"
+      });
+    }).join("")}</ul>` : "";
+
+    return (today.length ? group("Today", today, "") : "") +
+      group("Tomorrow", tomorrow, "Nothing booked for tomorrow.") +
+      group("Coming up", later, "Nothing else booked yet. Share your open times to fill the week.") +
+      cancelHTML;
+  }
+
+  function coachMoney() {
+    const owing = unpaid().sort(byStart);
+    const owed = owedTotal();
+    const paid = state.bookings.filter((b) => isEnded(b) && b.paid && b.start > now() - 21 * DAY).sort(byStartDesc);
+
+    const owingHTML = owing.map((b) => {
+      const s = student(b.studentId);
+      return item({
+        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name), price: money(b.price),
+        tags: [tag("Unpaid", "unpaid")], cls: "item--unpaid",
+        actions: `<button type="button" class="btn btn--quiet" data-action="paid" data-method="Cash" data-id="${b.id}">Paid: Cash</button>
+          <button type="button" class="btn btn--quiet" data-action="paid" data-method="Revolut" data-id="${b.id}">Paid: Revolut</button>`
+      });
+    }).join("");
+
+    const paidHTML = paid.map((b) => item({
+      when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(student(b.studentId).name), price: money(b.price),
+      tags: [tag(`Paid · ${b.paid}`, "ok")],
+      actions: `<button type="button" class="btn btn--small btn--quiet" data-action="undo-paid" data-id="${b.id}">Undo</button>`
+    })).join("");
+
+    return `<div class="owed${owed ? "" : " owed--clear"}" style="margin-top:16px">
+        <p class="owed__label">Owed to you</p>
+        <p class="owed__value">${money(owed)}</p>
+        <p>${owing.length ? `${owing.length} finished session${owing.length > 1 ? "s" : ""} not marked paid yet.` : "All square. Nobody owes you for a finished session."}</p>
+      </div>
+      <h4 class="dm-sub">Unpaid</h4>
+      ${owingHTML ? `<ul class="list">${owingHTML}</ul>` : `<p class="dm-empty">Nothing unpaid.</p>`}
+      <h4 class="dm-sub">Paid, last 3 weeks</h4>
+      ${paidHTML ? `<ul class="list">${paidHTML}</ul>` : `<p class="dm-empty">No payments marked yet.</p>`}`;
+  }
+
+  function notesEditor(b) {
+    const d = ui.notesDraft;
+    return `<div class="editor">
+      <p class="editor__hint">Tap what you covered. Add a line if you want.</p>
+      <div class="chips" role="group" aria-label="Techniques covered">${TECHNIQUES.map((t) =>
+        `<button type="button" class="chip" data-action="chip" data-tech="${esc(t)}" aria-pressed="${d.techniques.includes(t)}">${esc(t)}</button>`).join("")}</div>
+      <label class="editor__label" for="notes-text">Anything else? (optional)</label>
+      <textarea id="notes-text" class="editor__text" rows="3" maxlength="400" placeholder="e.g. Keep the elbow tight on the cut">${esc(d.text)}</textarea>
+      ${d.error ? `<p class="dm-error" role="alert">${esc(d.error)}</p>` : ""}
+      <div class="item__actions">
+        <button type="button" class="btn btn--primary" data-action="save-notes" data-id="${b.id}">Save notes</button>
+        <button type="button" class="btn btn--quiet" data-action="close-notes">Cancel</button>
+      </div>
+    </div>`;
+  }
+
+  function coachNotes() {
+    const todo = state.bookings.filter(needsNotes).sort(byStartDesc);
+    const done = state.bookings.filter((b) => isEnded(b) && b.notes).sort(byStartDesc).slice(0, 5);
+
+    const row = (b, isTodo) => {
+      const s = student(b.studentId);
+      const editing = ui.notesFor === b.id;
+      const tags = isTodo ? [tag("Needs notes", "unpaid")] : [];
+      if (isUnpaid(b)) tags.push(tag("Unpaid", "unpaid"));
+      return item({
+        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name) + " · " + esc(s.belt), tags,
+        body: editing ? notesEditor(b) : (isTodo ? "" : notesBody(b)),
+        actions: editing ? "" : `<button type="button" class="btn ${isTodo ? "btn--primary" : "btn--small btn--quiet"}" data-action="open-notes" data-id="${b.id}">${isTodo ? "Log notes" : "Edit"}</button>`
+      });
+    };
+
+    return `<p class="dm-intro" style="margin-top:16px">What you log here shows up in that student's Next Stripe log.</p>
+      <h4 class="dm-sub">Needs notes</h4>
+      ${todo.length ? `<ul class="list">${todo.map((b) => row(b, true)).join("")}</ul>` : `<p class="dm-empty">All caught up.</p>`}
+      <h4 class="dm-sub">Logged recently</h4>
+      ${done.length ? `<ul class="list">${done.map((b) => row(b, false)).join("")}</ul>` : `<p class="dm-empty">Nothing logged yet.</p>`}`;
+  }
+
+  function coachRates() {
+    const rows = state.students.map((s) => {
+      const next = state.bookings.filter((b) => b.studentId === s.id && isUpcoming(b)).sort(byStart)[0];
+      return `<li class="item">
+        <div class="rate-row">
+          <div><p class="item__when">${esc(s.name)}</p><p class="item__who">${esc(s.belt)}${s.rate !== state.standardRate ? " · own rate" : ""}</p></div>
+          <div class="rate-edit">
+            <label class="sr-only" for="rate-${s.id}">Rate for ${esc(s.name)} in euro</label>
+            <span class="rate-edit__euro" aria-hidden="true">€</span>
+            <input id="rate-${s.id}" type="number" inputmode="numeric" min="0" max="500" step="5" value="${s.rate}">
+            <button type="button" class="btn btn--small btn--quiet" data-action="save-rate" data-sid="${s.id}">Save</button>
+          </div>
+        </div>
+        ${next ? `<p class="item__sub">Next booked: ${fmtDate(next.start)}, ${fmtTime(next.start)} at ${money(next.price)} (locked)</p>` : ""}
+      </li>`;
+    }).join("");
+    return `<p class="dm-intro" style="margin-top:16px">Standard rate: ${money(state.standardRate)} per 1-hour session. Sample figures.</p>
+      <p class="rate-note">A new rate applies to new bookings only. Sessions already booked keep the price they were booked at.</p>
+      <ul class="list">${rows}</ul>`;
+  }
+
+  function coachTimes() {
+    const open = openSlots();
+    const msg = openTimesMessage();
+    const windows = state.availability
+      .map((w, i) => ({ w, i }))
+      .sort((a, b) => WEEK_ORDER.indexOf(a.w.day) - WEEK_ORDER.indexOf(b.w.day) || a.w.start - b.w.start);
+    const hourOpt = (from, to, sel) => {
+      let o = "";
+      for (let h = from; h <= to; h++) o += `<option value="${h}"${h === sel ? " selected" : ""}>${pad(h)}:00</option>`;
+      return o;
+    };
+    const wd = ui.winDraft;
+
+    return `<h4 class="dm-sub">Next 7 days</h4>
+      <p>${open.length} open slot${open.length === 1 ? "" : "s"} right now.</p>
+      <div class="wa">
+        <a class="btn btn--wa" href="${esc(waLink(msg))}" target="_blank" rel="noopener noreferrer" data-wa="open-times">Share my open times on WhatsApp</a>
+        <p class="wa-note">Opens WhatsApp with the message written. You press send.</p>
+      </div>
+      <details class="preview"><summary>Preview the message</summary><pre>${esc(msg)}</pre></details>
+
+      <h4 class="dm-sub">Weekly open times</h4>
+      ${windows.length ? `<ul class="list">${windows.map(({ w, i }) => `<li class="item"><div class="win-row">
+          <div><p class="item__when">${DAY_NAMES[w.day]}</p><p class="item__who">${pad(w.start)}:00–${pad(w.end)}:00 · ${w.end - w.start} slot${w.end - w.start === 1 ? "" : "s"}</p></div>
+          <button type="button" class="btn btn--small btn--quiet" data-action="remove-window" data-index="${i}" aria-label="Remove ${DAY_NAMES[w.day]} ${pad(w.start)}:00 to ${pad(w.end)}:00">Remove</button>
+        </div></li>`).join("")}</ul>` : `<p class="dm-empty">No weekly open times. Add one below.</p>`}
+
+      <h4 class="dm-sub">Add open time</h4>
+      <div class="addwin">
+        <label>Day<select id="win-day" data-draft="day">${WEEK_ORDER.map((d) => `<option value="${d}"${d === wd.day ? " selected" : ""}>${DAY_SHORT[d]}</option>`).join("")}</select></label>
+        <label>From<select id="win-start" data-draft="start">${hourOpt(6, 22, wd.start)}</select></label>
+        <label>To<select id="win-end" data-draft="end">${hourOpt(7, 23, wd.end)}</select></label>
+        <button type="button" class="btn btn--primary" data-action="add-window">Add open time</button>
+      </div>
+      ${ui.winError ? `<p class="dm-error" role="alert">${esc(ui.winError)}</p>` : ""}`;
+  }
+
+  // Coach button handling. Returns false if the action isn't a coach one.
+  function handleCoachAction(action, el, id) {
+    switch (action) {
+      case "bell":
+        ui.bellOpen = !ui.bellOpen;
+        if (ui.bellOpen) {
+          ui.bellWasUnread = state.notifications.filter((n) => !n.read).map((n) => n.id);
+          markAllRead(); // opening the list marks everything as read
+        }
+        ui.focus = '[data-action="bell"]';
+        return true;
+      case "tab":
+        ui.coachTab = el.dataset.tab;
+        ui.cancelAsk = null;
+        ui.notesFor = null;
+        ui.winError = "";
+        ui.focus = `#tab-${ui.coachTab}`;
+        saveUI();
+        return true;
+      case "c-confirm":
+        if (confirmBooking(id, "coach")) flash("Marked as confirmed.");
+        return true;
+      case "paid": {
+        const b = booking(id);
+        markPaid(id, el.dataset.method);
+        if (b) flash(`${first(student(b.studentId))}, ${fmtDate(b.start)}: paid by ${el.dataset.method}. Owed to you is now ${money(owedTotal())}.`);
+        return true;
+      }
+      case "undo-paid":
+        undoPaid(id);
+        flash(`Back to unpaid. Owed to you is now ${money(owedTotal())}.`);
+        return true;
+      case "open-notes": {
+        const b = booking(id);
+        ui.notesFor = id;
+        ui.notesDraft = { techniques: b && b.notes ? b.notes.techniques.slice() : [], text: b && b.notes ? b.notes.text : "", error: "" };
+        ui.focus = ".editor .chip";
+        return true;
+      }
+      case "chip": {
+        const t = el.dataset.tech;
+        const list = ui.notesDraft.techniques;
+        const at = list.indexOf(t);
+        if (at >= 0) list.splice(at, 1); else list.push(t);
+        ui.notesDraft.error = "";
+        ui.focus = `.chip[data-tech="${CSS.escape(t)}"]`;
+        return true;
+      }
+      case "save-notes": {
+        const d = ui.notesDraft;
+        if (!d.techniques.length && !d.text.trim()) {
+          d.error = "Tap at least one technique or write a line.";
+          return true;
+        }
+        const b = booking(id);
+        saveNotes(id, d.techniques, d.text);
+        ui.notesFor = null;
+        if (b) flash(`Notes saved. ${first(student(b.studentId))} can see them in Next Stripe.`);
+        return true;
+      }
+      case "close-notes":
+        ui.notesFor = null;
+        return true;
+      case "save-rate": {
+        const sid = el.dataset.sid;
+        const input = app.querySelector(`#rate-${sid}`);
+        const value = Number(input && input.value);
+        if (!Number.isInteger(value) || value < 0 || value > 500) {
+          flash("Enter a whole number of euro between 0 and 500.", "warn");
+          return true;
+        }
+        setRate(sid, value);
+        flash(`${first(student(sid))}'s rate is now ${money(value)} for new bookings. Booked sessions keep their price.`);
+        return true;
+      }
+      case "remove-window":
+        removeWindow(Number(el.dataset.index));
+        flash("Open time removed. Existing bookings are unchanged.");
+        return true;
+      case "add-window": {
+        const err = addWindow(ui.winDraft.day, ui.winDraft.start, ui.winDraft.end);
+        ui.winError = err || "";
+        if (!err) flash(`Added ${DAY_NAMES[ui.winDraft.day]} ${pad(ui.winDraft.start)}:00–${pad(ui.winDraft.end)}:00.`);
+        return true;
+      }
+      default:
+        return false;
+    }
   }
 
   // ---------- Render ----------
@@ -641,6 +961,15 @@
           if (!handleCoachAction(action, el, id)) return;
       }
       render();
+    });
+
+    // Typing in the notes box, and the open-time pickers, update the draft without a re-render
+    app.addEventListener("input", (event) => {
+      if (event.target.id === "notes-text") ui.notesDraft.text = event.target.value;
+    });
+    app.addEventListener("change", (event) => {
+      const key = event.target.dataset && event.target.dataset.draft;
+      if (key) ui.winDraft[key] = Number(event.target.value);
     });
 
     // Keep the time-based flags live while the page is open
