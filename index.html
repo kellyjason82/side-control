@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
   <script>
     /* Safety net (old-style JS on purpose, so it runs on any browser):
        if the demo fails to start, say so inside the demo panel instead of leaving it blank. */
@@ -217,7 +217,7 @@
             </tr>
             <tr>
               <th scope="row" data-label="Requirement">Day-before check</th>
-              <td data-label="How">The day before, a session is flagged “Tomorrow” with a one-tap confirm, and the coach can send a WhatsApp reminder in one tap. Cancelling less than 24 hours before the start is flagged “Late cancel” automatically.</td>
+              <td data-label="How">The day before, the student gets a “Tomorrow” reminder with one-tap Oss (confirm) or Tap out (cancel), and the coach can also send a WhatsApp reminder. A tap-out inside 24 hours is flagged “Late cancel” automatically, with the coach's late-cancel fee applied if they've switched it on.</td>
               <td data-label="Status"><span class="tag tag--live">In the demo</span></td>
             </tr>
             <tr>
@@ -301,7 +301,7 @@
             <p><span class="tag tag--assumption">Assumption</span></p>
             <p class="price__amount">€9 <span>/ month per coach</span></p>
             <p class="price__extra">First month free.</p>
-            <p>Why that number: one avoided no-show or one forgotten payment at the sample rate of €80 covers about nine months.</p>
+            <p>Why that number: one late-cancel fee at the sample setting of 75% (€60) covers more than six months. One avoided no-show at the sample rate of €80 covers about nine.</p>
           </article>
           <article class="card">
             <h3 class="card__title">Coming later <span class="tag tag--planned">Planned</span></h3>
@@ -310,6 +310,9 @@
               <li>A Revolut payment link on each booking</li>
               <li>Automatic WhatsApp reminders that send themselves (needs WhatsApp Business)</li>
               <li>Push notifications to the coach's phone</li>
+              <li>Push notifications to students, with Oss / Tap out on the lock screen</li>
+              <li>Taking upfront payment in the app</li>
+              <li>Loyalty rewards (for example a discount on every 10th private)</li>
               <li>A club-wide plan</li>
             </ul>
           </article>
@@ -357,6 +360,6 @@
       <p>Side Control is a concept product in development. The coach, academy, students, prices and bookings shown are invented sample data. Gymdesk and BJJNote are named for comparison only and are not affiliated with Side Control.</p>    </div>
   </footer>
 
-  <script src="app.js?v=4" defer></script>
+  <script src="app.js?v=5" defer></script>
 </body>
 </html>

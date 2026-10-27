@@ -15,8 +15,8 @@ ONE public landing page on GitHub Pages for Side Control, a concept product, wit
 - Secondary line: "Book privates without the back-and-forth."
 
 A private-lesson book for BJJ coaches. Two views in the demo:
-- **Coach view**: set open times, see bookings, confirm/cancel, set each student's rate, mark paid (Cash or Revolut), log techniques covered.
-- **Student view, called "Next Stripe"**: see the coach's open slots, book one, confirm the day before, see their price up front, and see their own technique log of what was covered in each private.
+- **Coach view** (tabs: Diary, Money, Notes, Students, Times, Settings): set open times, see bookings, confirm/cancel, set each student's rate, mark paid (Cash or Revolut), log techniques covered, tap a student to see their card, and set late-cancel rules in Settings.
+- **Student view, called "Next Stripe"**: see the coach's open slots, book one, "Oss" (confirm) or "Tap out" (cancel), see their price up front, see their own private lessons completed and hours, and see their own technique log of what was covered in each private.
 
 ## Segment (who the page speaks to)
 - **Who:** Black and brown belt coaches in Ireland who teach paid one-to-one privates on their club's mats as their own side business (part-owners, or coaches on someone else's timetable).
@@ -38,16 +38,41 @@ How they cope today: the coach posts a reminder in the club WhatsApp group; stud
 Each must be visibly met in the demo or honestly marked "Planned".
 1. The student sees the coach's real open slots for the next 7 days and books one in 3 taps or fewer, with no messaging.
 2. A booked slot disappears for everyone else, so there's no double booking, and the coach gets an in-app notification instead of another WhatsApp.
-3. The day before, a session is flagged "Tomorrow" with a one-tap confirm, and the coach can send a WhatsApp reminder in one tap. A cancellation less than 24 hours before the start is flagged "Late cancel" automatically.
+3. The day before, the student gets a "Tomorrow" reminder with one-tap Oss (confirm) or Tap out (cancel), and the coach can also send a WhatsApp reminder. A tap-out inside 24 hours is flagged "Late cancel" automatically, with the coach's late-cancel fee applied if they've switched it on.
 4. The price is shown before booking, using the rate the coach has set for that student, and it is locked to the booking (changing the student's rate later doesn't change existing bookings).
 5. After the session ends, it shows as unpaid until the coach marks it paid as Cash or Revolut. Unpaid sessions stand out, with a running "owed to you" total.
 6. After the session, the coach logs techniques covered in under a minute (quick-pick chips plus free text), and the student sees it in their Next Stripe log.
 
 ## Rules must work by themselves
-- All flags (Tomorrow, Late cancel, Unpaid, Needs notes, past slots hidden) are calculated from dates and times relative to NOW, never typed in.
+- All flags (Tomorrow, Late cancel, Unpaid, Needs notes, Needs a nudge, Pay upfront required, past slots hidden) and all fees and student stats are calculated from dates and times relative to NOW, never typed in.
 - Sample data is generated RELATIVE TO TODAY on first load (e.g. "yesterday at 18:00", "tomorrow at 12:00") so the demo always looks live whenever it's opened.
 - Save everything in localStorage. Wrap every read/write in try/catch, and the page must still work if storage is blocked.
-- Provide a visible "Reset sample data" button. Reset restores everything, including notifications.
+- Provide a visible "Reset sample data" button. Reset restores everything, including notifications and coach settings.
+- The saved data has a version number (`DATA_VERSION` in `app.js`). Bump it when the saved shape changes, so old saved data is replaced by fresh sample data.
+
+## Oss / Tap out (student view)
+- The student's confirm button is "Oss" (confirm) and cancel is "Tap out" (cancel).
+- In Next Stripe, a "Tomorrow" session appears at the top as an in-app reminder card: "Your private is tomorrow at [time], [price]." with Oss and Tap out buttons, labelled small: "In the full app this arrives as a push notification (Planned)."
+- Next Stripe shows the student's own private lessons completed and hours. Never their late-cancel count or "Needs a nudge" flag.
+
+## Coach settings (Settings tab, saved in localStorage)
+- Late-cancel fee: Off / Flagged students only / Everyone. Default: Flagged students only.
+- Fee amount: % of the session price, default 75%.
+- Late-cancel window: hours before the start, default 24.
+- "Needs a nudge" threshold: late cancels in the last 90 days, default 2.
+- Pay upfront for "Needs a nudge" students: on/off, default on.
+
+## Late cancels, fees and "Needs a nudge" (all calculated, never typed in)
+- A student's tap-out inside the window is flagged "Late cancel". The window is locked to the booking when it's cancelled.
+- If the fee setting applies to that student, a late-cancel fee (rounded to the euro) is created automatically, e.g. "Late-cancel fee: Conor, Wed 12:00, €60", added to "owed to you", and marked paid as Cash or Revolut like any session. The fee is locked when the cancellation happens: changing settings later never changes it.
+- On "Flagged students only", the tap-out that reaches the threshold carries the fee (so the 2nd late cancel with the default threshold of 2).
+- Coach cancellations are flagged late if inside the window but never create a fee and never count towards "Needs a nudge".
+- Before a student taps out inside the window, if a fee applies, show it honestly: "Tapping out now means a late-cancel fee of €60. Still tap out?"
+- "Needs a nudge": the student's late cancels in the last 90 days reach the threshold. Coach view only, never shown to the student.
+- For flagged students, the Coach view shows a "Send an extra reminder on WhatsApp" prompt on their upcoming sessions (on a Tomorrow session, a "don't skip this reminder" line above the normal reminder instead), and if "Pay upfront" is on, their bookings show "Pay upfront required". Actually taking the payment is Planned.
+
+## Student cards (Coach view, Students tab)
+- Tap a student's name to open their card: private lessons completed, total hours, late cancels (last 90 days), amount owed (sessions plus fees), and a "Needs a nudge" badge if flagged. All counted from the bookings data.
 
 ## WhatsApp (started by the coach only)
 - Use click-to-chat links: `https://wa.me/?text=...` with URL-encoded text and NO phone number, so the coach picks the contact in WhatsApp. Never store or show phone numbers. Open in a new tab.
@@ -68,6 +93,8 @@ Each must be visibly met in the demo or honestly marked "Planned".
 - At least 6 sample students with invented names and a belt each.
 - At least 10 bookings covering: past and paid (with notes), past and unpaid, past needing notes, one late cancel, tomorrow unconfirmed, and upcoming.
 - Standard rate EUR 80 per one-hour private, with one or two students on a different sample rate. All prices labelled as sample figures.
+- One loyal student with 10+ completed private lessons (Aoife: 11).
+- One student with 2 late cancels in the last 90 days, so they're flagged "Needs a nudge" on first load, with one of those late cancels carrying an unpaid fee (Conor: €60).
 - Coach availability as weekly windows (e.g. Mon and Wed 12:00 to 14:00, Tue and Thu 19:00 to 21:00, Sat 10:00 to 13:00), split into 60-minute slots.
 
 ## Landing page sections (in this order: think, build, sell, reflect)
@@ -81,7 +108,7 @@ Each must be visibly met in the demo or honestly marked "Planned".
 5. **Requirements table:** exactly the six requirements above: requirement, how Side Control meets it, "In the demo" or "Planned". Planned extras live under "Coming later", not in this table.
 6. **The demo (`#demo`)** with a Coach / Next Stripe toggle and a student picker for the student view.
 7. **"We tested it":** a placeholder block to fill in later (who tried it, what they tried, what broke or confused them, what we changed).
-8. **How it's paid for:** ASSUMPTION, clearly labelled. EUR 9 per month per coach, first month free. Reasoning: one avoided no-show or one forgotten payment (EUR 80) covers about nine months. "Coming later" (Planned): semi-private sessions for 2 or 3 people at a lower per-head rate, a Revolut payment link, automatic WhatsApp reminders that send themselves (needs WhatsApp Business), push notifications to the coach's phone, a club-wide plan.
+8. **How it's paid for:** ASSUMPTION, clearly labelled. EUR 9 per month per coach, first month free. Reasoning: "One late-cancel fee at the sample setting of 75% (€60) covers more than six months. One avoided no-show at the sample rate of €80 covers about nine." "Coming later" (Planned): semi-private sessions for 2 or 3 people at a lower per-head rate, a Revolut payment link, automatic WhatsApp reminders that send themselves (needs WhatsApp Business), push notifications to the coach's phone, push notifications to students with Oss / Tap out on the lock screen, taking upfront payment in the app, loyalty rewards (for example a discount on every 10th private), a club-wide plan.
 9. **Waiting list form** for coaches (name, email, academy). It must NOT send data anywhere: on submit it only shows a thank-you message.
 10. **Footer:** "Side Control is a concept product in development. The coach, academy, students, prices and bookings shown are invented sample data. Gymdesk and BJJNote are named for comparison only and are not affiliated with Side Control." Later, the footer will get a "Behind the build" link to a separate page. Don't build that page or link until asked.
 

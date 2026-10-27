@@ -12,6 +12,16 @@
   const HOUR = 60 * MIN;
   const DAY = 24 * HOUR;
   const SESSION = HOUR; // every private lesson is 60 minutes
+  const DATA_VERSION = 2; // bump when the saved shape changes, so old data is replaced by fresh sample data
+
+  // Coach settings, and what "Reset sample data" puts back
+  const DEFAULT_SETTINGS = { feeMode: "flagged", feePct: 75, windowHours: 24, nudgeThreshold: 2, payUpfront: true };
+  const FEE_MODES = [
+    { id: "off", label: "Off" },
+    { id: "flagged", label: "Flagged students only" },
+    { id: "everyone", label: "Everyone" }
+  ];
+  const NUDGE_DAYS = 90;
 
   const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -97,8 +107,12 @@
   const isInProgress = (b) => isBooked(b) && b.start <= now() && endOf(b) > now();
   const isEnded = (b) => isBooked(b) && endOf(b) <= now();
   const isTomorrow = (b) => isUpcoming(b) && daysFromToday(b.start) === 1;
-  const isLateCancel = (b) => b.status === "cancelled" && b.cancelledAt != null && b.start - b.cancelledAt < DAY;
+  // The late-cancel window is locked to the booking when it's cancelled, so changing the setting later
+  // doesn't re-flag old cancellations.
+  const windowOf = (b) => (b.lateWindow != null ? b.lateWindow : 24) * HOUR;
+  const isLateCancel = (b) => b.status === "cancelled" && b.cancelledAt != null && b.start - b.cancelledAt < windowOf(b);
   const isUnpaid = (b) => isEnded(b) && !b.paid;
+  const isFeeUnpaid = (b) => !!b.fee && !b.fee.paid;
   const needsNotes = (b) => isEnded(b) && !b.notes;
   const byStart = (a, b) => a.start - b.start;
   const byStartDesc = (a, b) => b.start - a.start;
@@ -156,6 +170,23 @@
     const notes = (techniques, text, start) => ({ techniques, text, at: start + 2 * HOUR });
     let t;
 
+    // Loyal student: Aoife has a long run of paid sessions (with these and the two below, 11 completed)
+    const loyal = [
+      [-75, ["Guard retention"], "Knees and elbows connected. Frame, then hip out."],
+      [-68, ["Scissor sweep"], "Grip the collar deep before you chop the legs."],
+      [-61, ["Armbar from guard"], "Pinch the knees. Hips up before you fall back."],
+      [-54, ["Triangle"], "Cut the angle first. Pull the head down, then lock."],
+      [-47, ["Half guard sweep"], "Get the underhook or get flat. Nothing in between."],
+      [-40, ["Kimura"], "Hand to wrist, then climb the hips over."],
+      [-33, ["Cross collar choke"], "First grip deep, palm up. Second grip palm down."],
+      [-26, ["Toreando pass"], "Push the knees to the mat, step wide, don't chase."],
+      [-19, ["Back take", "Rear naked choke"], "Seatbelt first, hooks second. Chest glued to the back."]
+    ];
+    loyal.forEach((l, i) => {
+      t = at(l[0], 10);
+      add("s1", t, { confirmed: true, paid: i % 2 ? "Cash" : "Revolut", paidAt: t + HOUR, notes: notes(l[1], l[2], t) });
+    });
+
     // Past and paid, with notes
     t = at(-12, 12);
     add("s1", t, { confirmed: true, paid: "Revolut", paidAt: t + HOUR, notes: notes(["Knee cut pass", "Guard retention"], "Win the underhook before you cut. 3 x 10 each side.", t) });
@@ -176,9 +207,20 @@
     t = at(-2, 19);
     add("s1", t, { confirmed: true, paid: "Cash", paidAt: t + HOUR });
 
-    // Late cancel: cancelled 10 hours before the start
+    // "Needs a nudge": Conor has 2 late cancels in the last 90 days.
+    // The first one came before he was flagged, so no fee (setting: flagged students only).
+    t = at(-34, 19);
+    add("s2", t, { status: "cancelled", cancelledAt: t - 6 * HOUR, cancelledBy: "student", lateWindow: 24, createdAt: t - 5 * DAY });
+    // The second one reached the threshold, so it carries a late-cancel fee (75% of €80), still unpaid
     t = at(-1, 19);
-    const late = add("s6", t, { status: "cancelled", cancelledAt: t - 10 * HOUR, cancelledBy: "student", createdAt: t - 4 * DAY });
+    const late = add("s2", t, {
+      status: "cancelled", cancelledAt: t - 10 * HOUR, cancelledBy: "student", lateWindow: 24, createdAt: t - 4 * DAY,
+      fee: { amount: 60, pct: 75, paid: null, paidAt: null }
+    });
+
+    // An ordinary cancellation, well ahead of time: not late, no fee
+    t = at(-6, 12);
+    add("s6", t, { status: "cancelled", cancelledAt: t - 3 * DAY, cancelledBy: "student", lateWindow: 24, createdAt: t - 6 * DAY });
 
     // Past, unpaid, needs notes
     t = at(-1, 12);
@@ -197,25 +239,27 @@
     const notifications = [
       { id: "n1", text: `New booking: Aoife, ${shortSlot(up3.start)}, ${money(up3.price)}`, at: up3.createdAt, read: false },
       { id: "n2", text: `New booking: Niamh, ${shortSlot(up1.start)}, ${money(up1.price)}`, at: up1.createdAt, read: false },
-      { id: "n3", text: `Late cancel: Rory, ${shortSlot(late.start)}`, at: late.cancelledAt, read: false },
+      { id: "n3", text: `Late-cancel fee: Conor, ${shortSlot(late.start)}, ${money(late.fee.amount)}`, at: late.cancelledAt, read: false },
       { id: "n4", text: `New booking: Conor, ${shortSlot(tmr.start)}, ${money(tmr.price)}`, at: tmr.createdAt, read: true }
     ];
 
     return {
-      version: 1,
+      version: DATA_VERSION,
       seededAt: now(),
       coach: { name: "Dara Quinn", belt: "Black belt", academy: "Slate Lane Academy" },
       standardRate: 80,
+      settings: Object.assign({}, DEFAULT_SETTINGS),
       students, availability, bookings, notifications
     };
   }
 
   // ---------- Load / save ----------
-  const isValid = (s) => s && s.version === 1 && s.coach &&
+  const isValid = (s) => s && s.version === DATA_VERSION && s.coach && s.settings &&
     ["students", "bookings", "availability", "notifications"].every((k) => Array.isArray(s[k]));
 
   let state = readJSON(STORE_KEY);
   if (!isValid(state)) state = makeSeed();
+  state.settings = Object.assign({}, DEFAULT_SETTINGS, state.settings);
   const save = () => writeJSON(STORE_KEY, state);
   save();
 
@@ -227,7 +271,29 @@
   const isTaken = (t) => state.bookings.some((b) => isBooked(b) && b.start === t);
   const openSlots = () => windowSlots(state.availability, 0, 6).filter((t) => !isTaken(t));
   const unpaid = () => state.bookings.filter(isUnpaid);
-  const owedTotal = () => unpaid().reduce((sum, b) => sum + b.price, 0);
+  const unpaidFees = () => state.bookings.filter(isFeeUnpaid);
+  const owedFor = (list) => list.reduce((sum, b) => sum + (isUnpaid(b) ? b.price : 0) + (isFeeUnpaid(b) ? b.fee.amount : 0), 0);
+  const owedTotal = () => owedFor(state.bookings);
+  const owedBy = (sid) => owedFor(state.bookings.filter((b) => b.studentId === sid));
+  const completedBy = (sid) => state.bookings.filter((b) => b.studentId === sid && isEnded(b)).length;
+  const hoursBy = (sid) => completedBy(sid) * (SESSION / HOUR);
+
+  // Late cancels by the student in the last 90 days (coach cancellations never count against a student)
+  const lateCancelsBy = (sid) => state.bookings.filter((b) => b.studentId === sid && b.cancelledBy === "student" &&
+    isLateCancel(b) && b.cancelledAt > now() - NUDGE_DAYS * DAY).length;
+  // "Needs a nudge" is worked out from the bookings every time. Coach view only.
+  const needsNudge = (sid) => lateCancelsBy(sid) >= state.settings.nudgeThreshold;
+  const payUpfrontFor = (sid) => state.settings.payUpfront && needsNudge(sid);
+  const insideWindow = (b) => b.start - now() < state.settings.windowHours * HOUR;
+
+  // The fee a student would owe if they tapped out of this booking right now (0 = no fee).
+  // On "Flagged students only", the tap-out that reaches the threshold counts.
+  function feeIfTapOut(b) {
+    const st = state.settings;
+    if (!isUpcoming(b) || !insideWindow(b) || st.feeMode === "off") return 0;
+    if (st.feeMode === "flagged" && lateCancelsBy(b.studentId) + 1 < st.nudgeThreshold) return 0;
+    return Math.round(b.price * st.feePct / 100);
+  }
   const unreadCount = () => state.notifications.filter((n) => !n.read).length;
   const uid = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -274,14 +340,51 @@
   function cancelBooking(id, by) {
     const b = booking(id);
     if (!b || !isUpcoming(b)) return null;
+    // Work the fee out before the booking changes. Only a student's tap-out can carry a fee.
+    const fee = by === "student" ? feeIfTapOut(b) : 0;
     b.status = "cancelled";
     b.cancelledAt = now();
     b.cancelledBy = by;
+    b.lateWindow = state.settings.windowHours; // locked to this cancellation
+    // Locked too: changing the settings later doesn't change this fee
+    if (fee > 0) b.fee = { amount: fee, pct: state.settings.feePct, paid: null, paidAt: null };
     if (by === "student") {
-      notify(`${isLateCancel(b) ? "Late cancel" : "Cancelled"}: ${first(student(b.studentId))}, ${shortSlot(b.start)}`);
+      const who = `${first(student(b.studentId))}, ${shortSlot(b.start)}`;
+      notify(fee > 0 ? `Late-cancel fee: ${who}, ${money(fee)}` : `${isLateCancel(b) ? "Late cancel" : "Cancelled"}: ${who}`);
     }
     save();
     return b;
+  }
+
+  function markFeePaid(id, method) {
+    const b = booking(id);
+    if (!b || !b.fee || (method !== "Cash" && method !== "Revolut")) return;
+    b.fee.paid = method;
+    b.fee.paidAt = now();
+    save();
+  }
+
+  function undoFeePaid(id) {
+    const b = booking(id);
+    if (!b || !b.fee) return;
+    b.fee.paid = null;
+    b.fee.paidAt = null;
+    save();
+  }
+
+  // Checks the numbers and saves them. Returns an error message, or null if it saved.
+  function saveSettings(next) {
+    const whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
+    if (!FEE_MODES.some((m) => m.id === next.feeMode)) return "Pick who the late-cancel fee applies to.";
+    if (!whole(next.feePct, 0, 100)) return "Fee amount: a whole number from 0 to 100 (%).";
+    if (!whole(next.windowHours, 1, 72)) return "Late-cancel window: a whole number of hours from 1 to 72.";
+    if (!whole(next.nudgeThreshold, 1, 10)) return "“Needs a nudge” threshold: a whole number from 1 to 10.";
+    state.settings = {
+      feeMode: next.feeMode, feePct: next.feePct, windowHours: next.windowHours,
+      nudgeThreshold: next.nudgeThreshold, payUpfront: !!next.payUpfront
+    };
+    save();
+    return null;
   }
 
   function markPaid(id, method) {
@@ -341,6 +444,12 @@
     return `Hi ${first(s)}, reminder of your private tomorrow (${DAY_NAMES[new Date(b.start).getDay()]}) at ${fmtTime(b.start)}. ${money(b.price)}, as agreed. Reply Oss to confirm 👊`;
   }
 
+  // Extra reminder for "Needs a nudge" students, sent earlier than the day before
+  function extraReminderMessage(b) {
+    const s = student(b.studentId);
+    return `Hi ${first(s)}, just checking in about your private on ${DAY_NAMES[new Date(b.start).getDay()]} ${fmtDate(b.start).split(" ").slice(1).join(" ")} at ${fmtTime(b.start)}. ${money(b.price)}, as agreed. Reply Oss to confirm, or let me know early if you can't make it 👊`;
+  }
+
   function openTimesMessage() {
     const slots = openSlots();
     if (!slots.length) return `No open times for 1-to-1 sessions with Coach ${coachFirst()} in the next 7 days. More soon.`;
@@ -364,18 +473,48 @@
     </li>`;
   }
 
-  function cancelAsk(b, who) {
-    const late = b.start - now() < DAY;
+  const hoursText = (h) => `${h} hour${h === 1 ? "" : "s"}`;
+
+  // Coach cancelling: flagged late if inside the window, but the student is never charged for it
+  function cancelAsk(b) {
+    const late = insideWindow(b);
     return `<div class="ask" role="group" aria-label="Cancel this session?">
       <p>${late
-        ? "<strong>Less than 24 hours to go.</strong> This will be flagged as a late cancel."
+        ? `<strong>Less than ${hoursText(state.settings.windowHours)} to go.</strong> This will be flagged as a late cancel. No fee is charged when you cancel.`
         : "Cancel this session? The slot opens up again for others."}</p>
       <div class="item__actions">
-        <button type="button" class="btn btn--danger" data-action="${who}-cancel-yes" data-id="${b.id}">Yes, cancel</button>
+        <button type="button" class="btn btn--danger" data-action="c-cancel-yes" data-id="${b.id}">Yes, cancel</button>
         <button type="button" class="btn btn--quiet" data-action="cancel-no">Keep it</button>
       </div>
     </div>`;
   }
+
+  // Student tapping out: any fee is shown honestly before they commit
+  function tapOutAsk(b) {
+    const fee = feeIfTapOut(b);
+    let text = "Tap out of this session? The slot opens up again for others.";
+    if (fee > 0) text = `<strong>Tapping out now means a late-cancel fee of ${money(fee)}.</strong> Still tap out?`;
+    else if (insideWindow(b)) text = `<strong>Less than ${hoursText(state.settings.windowHours)} to go.</strong> This will be flagged as a late cancel. Still tap out?`;
+    return `<div class="ask" role="group" aria-label="Tap out of this session?">
+      <p>${text}</p>
+      <div class="item__actions">
+        <button type="button" class="btn btn--danger" data-action="s-cancel-yes" data-id="${b.id}">Yes, tap out</button>
+        <button type="button" class="btn btn--quiet" data-action="cancel-no">Keep it</button>
+      </div>
+    </div>`;
+  }
+
+  const OSS_LABEL = `Oss <span class="btn__hint">(confirm)</span>`;
+  const TAPOUT_LABEL = `Tap out <span class="btn__hint">(cancel)</span>`;
+
+  // Tag showing a late-cancel fee and whether it's been paid
+  const feeTag = (b) => b.fee ? tag(`Late-cancel fee ${money(b.fee.amount)} · ${b.fee.paid ? "Paid · " + b.fee.paid : "To pay"}`, b.fee.paid ? "ok" : "unpaid") : "";
+
+  const cancelTags = (b) => {
+    const tags = [isLateCancel(b) ? tag("Late cancel", "late") : tag("Cancelled", "muted")];
+    if (b.fee) tags.push(feeTag(b));
+    return tags;
+  };
 
   function notesBody(b) {
     if (!b.notes) return "";
@@ -388,9 +527,14 @@
   const ui = {
     view: savedUI.view === "coach" ? "coach" : "student",
     studentId: savedUI.studentId || "s1",
-    coachTab: savedUI.coachTab || "diary",
+    coachTab: savedUI.coachTab === "rates" ? "students" : (savedUI.coachTab || "diary"),
     selectedSlot: null,
     cancelAsk: null,
+    cancelAskAt: "list", // where the tap-out question shows: the reminder "card" or the "list"
+    cardFor: null,       // which student's card is open in the coach's Students tab
+    settingsDirty: false,
+    settingsError: "",
+    settingsSaved: false,
     notesFor: null,
     notesDraft: { techniques: [], text: "" },
     winDraft: { day: 5, start: 18, end: 20 },
@@ -408,6 +552,9 @@
     ui.notesFor = null;
     ui.bellOpen = false;
     ui.winError = "";
+    ui.settingsDirty = false;
+    ui.settingsError = "";
+    ui.settingsSaved = false;
   }
 
   function flash(text, kind) {
@@ -425,29 +572,41 @@
     const coming = mine.filter((b) => isUpcoming(b) || isInProgress(b) ||
       (b.status === "cancelled" && b.start > now())).sort(byStart);
 
+    const ossBtn = (b) => `<button type="button" class="btn btn--primary" data-action="s-confirm" data-id="${b.id}" aria-label="Oss, confirm I'm coming">${OSS_LABEL}</button>`;
+    const tapOutBtn = (b, where) => `<button type="button" class="btn btn--quiet" data-action="ask-cancel" data-where="${where}" data-id="${b.id}" aria-label="Tap out, cancel this session">${TAPOUT_LABEL}</button>`;
+
+    // In-app reminder card for tomorrow's session(s), at the top
+    const reminders = mine.filter(isTomorrow).sort(byStart).map((b) => {
+      const asking = ui.cancelAsk === b.id && ui.cancelAskAt === "card";
+      return `<div class="remind" role="group" aria-label="Reminder for tomorrow">
+        <p class="remind__eyebrow">Reminder</p>
+        <p class="remind__text">Your private is tomorrow at ${fmtTime(b.start)}, ${money(b.price)}.</p>
+        ${b.confirmed ? `<p class="remind__ok">${tag("Confirmed", "ok")} Oss! Coach ${esc(coachFirst())} knows you're coming.</p>` : ""}
+        ${asking ? tapOutAsk(b) : `<div class="item__actions">${b.confirmed ? "" : ossBtn(b)}${tapOutBtn(b, "card")}</div>`}
+        <p class="remind__note">In the full app this arrives as a push notification <span class="tag tag--planned">Planned</span></p>
+      </div>`;
+    }).join("");
+
     const sessions = coming.map((b) => {
       const tags = [];
       let actions = "";
       let body = "";
       if (b.status === "cancelled") {
-        tags.push(isLateCancel(b) ? tag("Late cancel", "late") : tag("Cancelled", "muted"));
-        return item({ when: whenLabel(b.start), price: money(b.price), tags, cls: "item--cancelled" });
+        return item({ when: whenLabel(b.start), price: money(b.price), tags: cancelTags(b), cls: "item--cancelled" });
       }
       if (isInProgress(b)) tags.push(tag("On the mat now", "live"));
       if (isTomorrow(b)) tags.push(tag("Tomorrow", "tomorrow"));
       if (b.confirmed) tags.push(tag("Confirmed", "ok"));
 
       if (isTomorrow(b) && !b.confirmed) {
-        actions += `<button type="button" class="btn btn--primary" data-action="s-confirm" data-id="${b.id}">Confirm I'm coming</button>`;
+        actions += ossBtn(b);
       } else if (!b.confirmed && isUpcoming(b)) {
-        body = `<p class="item__sub">You'll be asked to confirm the day before.</p>`;
+        body = `<p class="item__sub">You'll be asked to Oss (confirm) the day before.</p>`;
       }
-      if (isUpcoming(b)) {
-        actions += `<button type="button" class="btn btn--quiet" data-action="ask-cancel" data-id="${b.id}">Cancel</button>`;
-      }
-      if (ui.cancelAsk === b.id) {
+      if (isUpcoming(b)) actions += tapOutBtn(b, "list");
+      if (ui.cancelAsk === b.id && ui.cancelAskAt === "list") {
         actions = "";
-        body += cancelAsk(b, "s");
+        body += tapOutAsk(b);
       }
       return item({ when: whenLabel(b.start), price: `${money(b.price)}<span>locked</span>`, tags, body, actions });
     }).join("");
@@ -477,7 +636,7 @@
       .sort(byStartDesc)
       .map((b) => {
         if (b.status === "cancelled") {
-          return item({ when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, tags: [isLateCancel(b) ? tag("Late cancel", "late") : tag("Cancelled", "muted")], cls: "item--cancelled" });
+          return item({ when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, tags: cancelTags(b), cls: "item--cancelled" });
         }
         const tags = [b.paid ? tag(`Paid · ${b.paid}`, "ok") : tag("To pay", "unpaid")];
         const body = b.notes ? notesBody(b) : `<p class="item__sub">Coach ${esc(coachFirst())} hasn't logged notes for this one yet.</p>`;
@@ -492,6 +651,11 @@
           <p class="vhead__meta">${esc(s.belt)} · Your price with Coach ${esc(coachFirst())}: <strong>${money(s.rate)}</strong> per session</p>
         </div>
       </div>
+      <div class="stats stats--two">
+        <div class="stat"><span class="stat__label">Private lessons completed</span><span class="stat__value">${completedBy(s.id)}</span></div>
+        <div class="stat"><span class="stat__label">Hours on the mat</span><span class="stat__value">${hoursBy(s.id)}</span></div>
+      </div>
+      ${reminders}
 
       <section class="dm-section" aria-labelledby="st-sessions">
         <h4 class="dm-h" id="st-sessions">Your sessions</h4>
@@ -516,8 +680,9 @@
     { id: "diary", label: "Diary" },
     { id: "money", label: "Money" },
     { id: "notes", label: "Notes" },
-    { id: "rates", label: "Rates" },
-    { id: "times", label: "Times" }
+    { id: "students", label: "Students" },
+    { id: "times", label: "Times" },
+    { id: "settings", label: "Settings" }
   ];
 
   function renderCoach() {
@@ -536,11 +701,11 @@
           : `<p class="dm-empty">Nothing yet. Student bookings, confirmations and cancellations show up here.</p>`}
       </div>` : "";
 
-    const counts = { money: unpaid().length, notes: toLog };
+    const counts = { money: unpaid().length + unpaidFees().length, notes: toLog };
     const tabs = `<div class="tabs" role="tablist" aria-label="Coach screens">${TABS.map((t) =>
       `<button type="button" class="tab" role="tab" id="tab-${t.id}" data-action="tab" data-tab="${t.id}" aria-selected="${ui.coachTab === t.id}" aria-controls="coach-panel">${t.label}${counts[t.id] ? `<span class="tab__count">${counts[t.id]}</span>` : ""}</button>`).join("")}</div>`;
 
-    const screens = { diary: coachDiary, money: coachMoney, notes: coachNotes, rates: coachRates, times: coachTimes };
+    const screens = { diary: coachDiary, money: coachMoney, notes: coachNotes, students: coachStudents, times: coachTimes, settings: coachSettings };
 
     return `
       <div class="vhead">
@@ -571,8 +736,22 @@
     if (isInProgress(b)) tags.push(tag("On the mat now", "live"));
     if (isTomorrow(b)) tags.push(tag("Tomorrow", "tomorrow"));
     tags.push(b.confirmed ? tag("Confirmed", "ok") : tag("Not confirmed yet", "muted"));
+    const nudge = isUpcoming(b) && needsNudge(s.id);
+    if (nudge) tags.push(tag("Needs a nudge", "nudge"));
+    if (isUpcoming(b) && payUpfrontFor(s.id)) {
+      tags.push(tag("Pay upfront required", "upfront"));
+      body += `<p class="item__sub">Taking the payment in the app is <span class="tag tag--planned">Planned</span>. For now, collect it before the session.</p>`;
+    }
 
+    if (nudge && !isTomorrow(b)) {
+      body += `<div class="wa">
+          <p class="nudge-line">${lateCancelsBy(s.id)} late cancels in the last ${NUDGE_DAYS} days. Worth an extra reminder.</p>
+          <a class="btn btn--wa" href="${esc(waLink(extraReminderMessage(b)))}" target="_blank" rel="noopener noreferrer" data-wa="extra" data-id="${b.id}">Send an extra reminder on WhatsApp</a>
+          <p class="wa-note">Opens WhatsApp with the message written. You press send.</p>
+        </div>`;
+    }
     if (isTomorrow(b)) {
+      if (nudge) body += `<p class="nudge-line">${lateCancelsBy(s.id)} late cancels in the last ${NUDGE_DAYS} days. Don't skip this reminder.</p>`;
       body += `<div class="wa">
           <a class="btn btn--wa" href="${esc(waLink(reminderMessage(b)))}" target="_blank" rel="noopener noreferrer" data-wa="reminder" data-id="${b.id}">Send reminder on WhatsApp</a>
           <p class="wa-note">Opens WhatsApp with the message written. You press send.</p>
@@ -584,7 +763,7 @@
     }
     if (ui.cancelAsk === b.id) {
       actions = "";
-      body += cancelAsk(b, "c");
+      body += cancelAsk(b);
     }
     return item({
       when: whenLabel(b.start), who: `${esc(s.name)} · ${esc(s.belt)}`, price: money(b.price),
@@ -607,7 +786,7 @@
       const s = student(b.studentId);
       return item({
         when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name), price: money(b.price),
-        tags: [isLateCancel(b) ? tag("Late cancel", "late") : tag("Cancelled", "muted")],
+        tags: cancelTags(b),
         body: `<p class="item__sub">Cancelled by ${b.cancelledBy === "coach" ? "you" : "the student"}, ${Math.max(0, Math.round((b.start - b.cancelledAt) / HOUR))} hours before the start.</p>`,
         cls: "item--cancelled"
       });
@@ -620,30 +799,45 @@
   }
 
   function coachMoney() {
-    const owing = unpaid().sort(byStart);
+    // Things owed: finished sessions not paid, plus late-cancel fees not paid
+    const owing = unpaid().map((b) => ({ b, fee: false }))
+      .concat(unpaidFees().map((b) => ({ b, fee: true })))
+      .sort((x, y) => x.b.start - y.b.start);
     const owed = owedTotal();
-    const paid = state.bookings.filter((b) => isEnded(b) && b.paid && b.start > now() - 21 * DAY).sort(byStartDesc);
+    const recent = (b) => b.start > now() - 21 * DAY;
+    const paid = state.bookings.filter((b) => isEnded(b) && b.paid && recent(b)).map((b) => ({ b, fee: false, at: b.paidAt }))
+      .concat(state.bookings.filter((b) => b.fee && b.fee.paid && recent(b)).map((b) => ({ b, fee: true, at: b.fee.paidAt })))
+      .sort((x, y) => y.b.start - x.b.start);
 
-    const owingHTML = owing.map((b) => {
+    const payButtons = (b, fee) => ["Cash", "Revolut"].map((m) =>
+      `<button type="button" class="btn btn--quiet" data-action="${fee ? "fee-paid" : "paid"}" data-method="${m}" data-id="${b.id}">Paid: ${m}</button>`).join("");
+
+    const owingHTML = owing.map(({ b, fee }) => {
       const s = student(b.studentId);
       return item({
-        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name), price: money(b.price),
-        tags: [tag("Unpaid", "unpaid")], cls: "item--unpaid",
-        actions: `<button type="button" class="btn btn--quiet" data-action="paid" data-method="Cash" data-id="${b.id}">Paid: Cash</button>
-          <button type="button" class="btn btn--quiet" data-action="paid" data-method="Revolut" data-id="${b.id}">Paid: Revolut</button>`
+        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name), price: money(fee ? b.fee.amount : b.price),
+        tags: fee ? [tag("Late-cancel fee", "unpaid"), tag("Unpaid", "unpaid")] : [tag("Unpaid", "unpaid")],
+        body: fee ? `<p class="item__sub">${b.fee.pct}% of the ${money(b.price)} session. Locked when ${esc(first(s))} tapped out.</p>` : "",
+        cls: "item--unpaid", actions: payButtons(b, fee)
       });
     }).join("");
 
-    const paidHTML = paid.map((b) => item({
-      when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(student(b.studentId).name), price: money(b.price),
-      tags: [tag(`Paid · ${b.paid}`, "ok")],
-      actions: `<button type="button" class="btn btn--small btn--quiet" data-action="undo-paid" data-id="${b.id}">Undo</button>`
+    const paidHTML = paid.map(({ b, fee }) => item({
+      when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(student(b.studentId).name), price: money(fee ? b.fee.amount : b.price),
+      tags: fee ? [tag("Late-cancel fee", "muted"), tag(`Paid · ${b.fee.paid}`, "ok")] : [tag(`Paid · ${b.paid}`, "ok")],
+      actions: `<button type="button" class="btn btn--small btn--quiet" data-action="${fee ? "undo-fee-paid" : "undo-paid"}" data-id="${b.id}">Undo</button>`
     })).join("");
+
+    const nSessions = owing.filter((o) => !o.fee).length;
+    const nFees = owing.length - nSessions;
+    const parts = [];
+    if (nSessions) parts.push(`${nSessions} finished session${nSessions > 1 ? "s" : ""}`);
+    if (nFees) parts.push(`${nFees} late-cancel fee${nFees > 1 ? "s" : ""}`);
 
     return `<div class="owed${owed ? "" : " owed--clear"}" style="margin-top:16px">
         <p class="owed__label">Owed to you</p>
         <p class="owed__value">${money(owed)}</p>
-        <p>${owing.length ? `${owing.length} finished session${owing.length > 1 ? "s" : ""} not marked paid yet.` : "All square. Nobody owes you for a finished session."}</p>
+        <p>${parts.length ? `${parts.join(" and ")} not marked paid yet.` : "All square. Nobody owes you anything."}</p>
       </div>
       <h4 class="dm-sub">Unpaid</h4>
       ${owingHTML ? `<ul class="list">${owingHTML}</ul>` : `<p class="dm-empty">Nothing unpaid.</p>`}
@@ -690,12 +884,32 @@
       ${done.length ? `<ul class="list">${done.map((b) => row(b, false)).join("")}</ul>` : `<p class="dm-empty">Nothing logged yet.</p>`}`;
   }
 
-  function coachRates() {
+  // The coach's card for one student: everything counted from the bookings
+  function studentCard(s) {
+    const late = lateCancelsBy(s.id);
+    const owed = owedBy(s.id);
+    return `<div class="scard" id="card-${s.id}">
+        ${needsNudge(s.id) ? `<p class="scard__flag">${tag("Needs a nudge", "nudge")} ${late} late cancels in ${NUDGE_DAYS} days (your threshold is ${state.settings.nudgeThreshold}). Only you see this.</p>` : ""}
+        <div class="stats stats--card">
+          <div class="stat"><span class="stat__label">Private lessons completed</span><span class="stat__value">${completedBy(s.id)}</span></div>
+          <div class="stat"><span class="stat__label">Total hours</span><span class="stat__value">${hoursBy(s.id)}</span></div>
+          <div class="stat${late ? " stat--owed" : ""}"><span class="stat__label">Late cancels, last ${NUDGE_DAYS} days</span><span class="stat__value">${late}</span></div>
+          <div class="stat${owed ? " stat--owed" : ""}"><span class="stat__label">Owed</span><span class="stat__value">${money(owed)}</span></div>
+        </div>
+      </div>`;
+  }
+
+  function coachStudents() {
     const rows = state.students.map((s) => {
       const next = state.bookings.filter((b) => b.studentId === s.id && isUpcoming(b)).sort(byStart)[0];
+      const open = ui.cardFor === s.id;
       return `<li class="item">
         <div class="rate-row">
-          <div><p class="item__when">${esc(s.name)}</p><p class="item__who">${esc(s.belt)}${s.rate !== state.standardRate ? " · own rate" : ""}</p></div>
+          <div>
+            <button type="button" class="namebtn" data-action="student-card" data-sid="${s.id}" aria-expanded="${open}" aria-controls="card-${s.id}">${esc(s.name)}<span aria-hidden="true">${open ? "▴" : "▾"}</span></button>
+            <p class="item__who">${esc(s.belt)}${s.rate !== state.standardRate ? " · own rate" : ""}</p>
+            ${needsNudge(s.id) ? `<p class="item__tags">${tag("Needs a nudge", "nudge")}</p>` : ""}
+          </div>
           <div class="rate-edit">
             <label class="sr-only" for="rate-${s.id}">Rate for ${esc(s.name)} in euro</label>
             <span class="rate-edit__euro" aria-hidden="true">€</span>
@@ -704,9 +918,10 @@
           </div>
         </div>
         ${next ? `<p class="item__sub">Next booked: ${fmtDate(next.start)}, ${fmtTime(next.start)} at ${money(next.price)} (locked)</p>` : ""}
+        ${open ? studentCard(s) : ""}
       </li>`;
     }).join("");
-    return `<p class="dm-intro" style="margin-top:16px">Standard rate: ${money(state.standardRate)} per 1-hour session. Sample figures.</p>
+    return `<p class="dm-intro" style="margin-top:16px">Tap a name to see their card. Standard rate: ${money(state.standardRate)} per 1-hour session. Sample figures.</p>
       <p class="rate-note">A new rate applies to new bookings only. Sessions already booked keep the price they were booked at.</p>
       <ul class="list">${rows}</ul>`;
   }
@@ -748,6 +963,44 @@
       ${ui.winError ? `<p class="dm-error" role="alert">${esc(ui.winError)}</p>` : ""}`;
   }
 
+  function coachSettings() {
+    const st = state.settings;
+    const num = (id, label, value, min, max, step, unit) => `<div class="set-field">
+        <label for="${id}">${label}</label>
+        <div class="set-input"><input id="${id}" type="number" inputmode="numeric" min="${min}" max="${max}" step="${step}" value="${value}"><span>${unit}</span></div>
+      </div>`;
+    return `<form class="settings" id="settings-form" novalidate>
+        <p class="dm-intro" style="margin-top:16px">Your rules for late cancels. Saved on this device.</p>
+        <fieldset class="set-group">
+          <legend>Late-cancel fee</legend>
+          <div class="opts">${FEE_MODES.map((m) => `<label class="opt"><input type="radio" name="feeMode" value="${m.id}"${st.feeMode === m.id ? " checked" : ""}> ${m.label}</label>`).join("")}</div>
+        </fieldset>
+        ${num("set-pct", "Fee amount (% of the session price)", st.feePct, 0, 100, 5, "%")}
+        ${num("set-window", "Late-cancel window (hours before the start)", st.windowHours, 1, 72, 1, "hours")}
+        ${num("set-threshold", "“Needs a nudge” after this many late cancels in the last 90 days", st.nudgeThreshold, 1, 10, 1, "late cancels")}
+        <label class="opt opt--check"><input type="checkbox" id="set-upfront"${st.payUpfront ? " checked" : ""}> Pay upfront for “Needs a nudge” students</label>
+        <p class="item__sub">Their bookings show “Pay upfront required”. Taking the payment in the app is <span class="tag tag--planned">Planned</span></p>
+        ${ui.settingsError ? `<p class="dm-error" role="alert">${esc(ui.settingsError)}</p>` : ""}
+        <div class="item__actions">
+          <button type="button" class="btn btn--primary" data-action="save-settings">Save settings</button>
+        </div>
+        ${ui.settingsSaved ? `<p class="dm-saved" role="status">Saved. New cancellations use these settings.</p>` : ""}
+        <p class="rate-note" style="margin-top:16px">Fees already created keep their amount. Changing these settings only affects new cancellations.</p>
+      </form>`;
+  }
+
+  function readSettingsForm() {
+    const f = app.querySelector("#settings-form");
+    const picked = f.querySelector('input[name="feeMode"]:checked');
+    return {
+      feeMode: picked ? picked.value : "",
+      feePct: Number(f.querySelector("#set-pct").value),
+      windowHours: Number(f.querySelector("#set-window").value),
+      nudgeThreshold: Number(f.querySelector("#set-threshold").value),
+      payUpfront: f.querySelector("#set-upfront").checked
+    };
+  }
+
   // Coach button handling. Returns false if the action isn't a coach one.
   function handleCoachAction(action, el, id) {
     switch (action) {
@@ -764,9 +1017,36 @@
         ui.cancelAsk = null;
         ui.notesFor = null;
         ui.winError = "";
+        ui.settingsDirty = false;
+        ui.settingsError = "";
+        ui.settingsSaved = false;
         ui.focus = `#tab-${ui.coachTab}`;
         saveUI();
         return true;
+      case "fee-paid": {
+        const b = booking(id);
+        markFeePaid(id, el.dataset.method);
+        if (b) flash(`${first(student(b.studentId))}'s late-cancel fee: paid by ${el.dataset.method}. Owed to you is now ${money(owedTotal())}.`);
+        return true;
+      }
+      case "undo-fee-paid":
+        undoFeePaid(id);
+        flash(`Fee back to unpaid. Owed to you is now ${money(owedTotal())}.`);
+        return true;
+      case "student-card": {
+        const sid = el.dataset.sid;
+        ui.cardFor = ui.cardFor === sid ? null : sid;
+        ui.focus = `[data-action="student-card"][data-sid="${sid}"]`;
+        return true;
+      }
+      case "save-settings": {
+        const err = saveSettings(readSettingsForm());
+        ui.settingsError = err || "";
+        ui.settingsSaved = !err;
+        ui.settingsDirty = !!err;
+        ui.focus = err ? ".dm-error" : ".dm-saved";
+        return true;
+      }
       case "c-confirm":
         if (confirmBooking(id, "coach")) flash("Marked as confirmed.");
         return true;
@@ -949,10 +1229,11 @@
           break;
         }
         case "s-confirm":
-          if (confirmBooking(id, "student")) flash(`Confirmed. Coach ${coachFirst()} can see it.`);
+          if (confirmBooking(id, "student")) flash(`Oss! Confirmed. Coach ${coachFirst()} can see it.`);
           break;
         case "ask-cancel":
           ui.cancelAsk = id;
+          ui.cancelAskAt = el.dataset.where || "list";
           ui.selectedSlot = null;
           ui.focus = '[data-action$="-cancel-yes"]';
           break;
@@ -961,11 +1242,16 @@
           break;
         case "s-cancel-yes":
         case "c-cancel-yes": {
-          const b = cancelBooking(id, action === "s-cancel-yes" ? "student" : "coach");
+          const isStudent = action === "s-cancel-yes";
+          const b = cancelBooking(id, isStudent ? "student" : "coach");
           ui.cancelAsk = null;
-          if (b) flash(isLateCancel(b)
-            ? `Cancelled ${shortSlot(b.start)}. Less than 24 hours' notice, so it's flagged as a late cancel.`
-            : `Cancelled ${shortSlot(b.start)}. The slot is open again.`, isLateCancel(b) ? "warn" : "ok");
+          if (b) {
+            const verb = isStudent ? "Tapped out of" : "Cancelled";
+            const notice = `Less than ${hoursText(b.lateWindow)}' notice, so it's flagged as a late cancel`;
+            if (b.fee) flash(`${verb} ${shortSlot(b.start)}. ${notice}, with a ${money(b.fee.amount)} late-cancel fee.`, "warn");
+            else if (isLateCancel(b)) flash(`${verb} ${shortSlot(b.start)}. ${notice}.`, "warn");
+            else flash(`${verb} ${shortSlot(b.start)}. The slot is open again.`);
+          }
           break;
         }
         default:
@@ -975,17 +1261,26 @@
     });
 
     // Typing in the notes box, and the open-time pickers, update the draft without a re-render
+    const inSettings = (el) => !!(el && el.closest && el.closest("#settings-form"));
     app.addEventListener("input", (event) => {
       if (event.target.id === "notes-text") ui.notesDraft.text = event.target.value;
+      if (inSettings(event.target)) { ui.settingsDirty = true; ui.settingsSaved = false; }
     });
     app.addEventListener("change", (event) => {
       const key = event.target.dataset && event.target.dataset.draft;
       if (key) ui.winDraft[key] = Number(event.target.value);
+      if (inSettings(event.target)) { ui.settingsDirty = true; ui.settingsSaved = false; }
+    });
+    // Pressing Enter in a settings box saves, instead of reloading the page
+    app.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const btn = app.querySelector('[data-action="save-settings"]');
+      if (btn) btn.click();
     });
 
-    // Keep the time-based flags live while the page is open
+    // Keep the time-based flags live while the page is open (but never wipe unsaved settings or notes)
     setInterval(() => {
-      if (document.hidden || ui.notesFor) return;
+      if (document.hidden || ui.notesFor || ui.settingsDirty) return;
       const active = document.activeElement;
       if (active && app.contains(active) && /INPUT|TEXTAREA|SELECT/.test(active.tagName)) return;
       render();

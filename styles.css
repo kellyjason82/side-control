@@ -807,7 +807,7 @@ img, svg { max-width: 100%; display: block; }
 /* Coach tabs */
 .tabs {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr); /* 6 tabs: two rows of 3 on a phone */
   gap: 4px;
   padding: 4px;
   background: var(--paper-2);
@@ -909,4 +909,88 @@ img, svg { max-width: 100%; display: block; }
 @media (min-width: 600px) {
   .demo__app { padding: var(--s5); }
   .slots { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ---------- Late cancels, fees, nudges, settings, student cards ---------- */
+.tag--nudge   { background: var(--warn); color: var(--white); }
+.tag--upfront { background: var(--ink); color: var(--paper); }
+.btn__hint { margin-left: 6px; font-weight: 500; font-size: 14px; opacity: .8; }
+.nudge-line { margin: 0 0 var(--s2); font-size: 14px; font-weight: 600; color: var(--warn); }
+
+/* Student's in-app reminder for tomorrow */
+.remind {
+  margin-top: var(--s4);
+  padding: var(--s4);
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: var(--paper);
+}
+.remind__eyebrow { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue-on-dark); }
+.remind__text { margin: var(--s1) 0 0; font: 700 24px/1.15 var(--font-head); }
+.remind__ok { margin: var(--s2) 0 0; font-size: 15px; }
+.remind .btn--quiet { background: transparent; color: var(--paper); border-color: var(--on-dark-muted); }
+.remind .ask { color: var(--text); }
+.remind .ask .btn--quiet { background: var(--white); color: var(--text); border-color: var(--line); }
+.remind__note { margin: var(--s3) 0 0; font-size: 13px; color: var(--on-dark-muted); }
+.remind__note .tag { vertical-align: 1px; }
+
+/* Stats rows */
+.stats--two { grid-template-columns: 1fr 1fr; margin-top: var(--s4); margin-bottom: 0; }
+.stats--card { grid-template-columns: 1fr 1fr; margin: var(--s3) 0 0; }
+
+/* Students tab */
+.namebtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--blue);
+  font: 600 16px/1.2 var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+.namebtn span { font-size: 13px; }
+.scard { margin-top: var(--s3); padding: var(--s3); background: var(--paper); border-radius: var(--radius-sm); }
+.scard__flag { margin: 0; font-size: 14px; color: var(--warn); }
+
+/* Settings */
+.set-group { margin: 0 0 var(--s4); padding: 0; border: 0; }
+.set-group legend, .set-field label { display: block; margin-bottom: var(--s2); font-weight: 600; font-size: 15px; }
+.opts { display: grid; gap: var(--s2); }
+.opt {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: var(--tap);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  font-size: 16px;
+  cursor: pointer;
+}
+.opt input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--blue); }
+.opt--check { margin-top: var(--s2); font-weight: 600; }
+.set-field { margin-bottom: var(--s4); }
+.set-input { display: flex; align-items: center; gap: var(--s2); }
+.set-input input {
+  width: 96px;
+  min-height: var(--tap);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--text);
+  font: 400 16px/1.4 var(--font-body);
+}
+.set-input span { font-size: 15px; color: var(--muted); }
+.dm-saved { margin: var(--s2) 0 0; font-weight: 600; font-size: 15px; color: var(--blue-dark); }
+.dm-saved:focus { outline: 2px solid currentColor; outline-offset: 2px; }
+
+@media (min-width: 600px) {
+  .tabs { grid-template-columns: repeat(6, 1fr); }
+  .opts { grid-template-columns: repeat(3, 1fr); }
 }
