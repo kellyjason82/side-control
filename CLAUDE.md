@@ -37,8 +37,8 @@ How they cope today: the coach posts a reminder in the club WhatsApp group; stud
 ## Requirements
 Each must be visibly met in the demo or honestly marked "Planned".
 1. The student sees the coach's real open slots for the next 7 days and books one in 3 taps or fewer, with no messaging.
-2. A booked slot disappears for everyone else, so there's no double booking.
-3. The day before, a session is flagged "Tomorrow" with a one-tap confirm. A cancellation less than 24 hours before the start is flagged "Late cancel" automatically.
+2. A booked slot disappears for everyone else, so there's no double booking, and the coach gets an in-app notification instead of another WhatsApp.
+3. The day before, a session is flagged "Tomorrow" with a one-tap confirm, and the coach can send a WhatsApp reminder in one tap. A cancellation less than 24 hours before the start is flagged "Late cancel" automatically.
 4. The price is shown before booking, using the rate the coach has set for that student, and it is locked to the booking (changing the student's rate later doesn't change existing bookings).
 5. After the session ends, it shows as unpaid until the coach marks it paid as Cash or Revolut. Unpaid sessions stand out, with a running "owed to you" total.
 6. After the session, the coach logs techniques covered in under a minute (quick-pick chips plus free text), and the student sees it in their Next Stripe log.
@@ -47,7 +47,20 @@ Each must be visibly met in the demo or honestly marked "Planned".
 - All flags (Tomorrow, Late cancel, Unpaid, Needs notes, past slots hidden) are calculated from dates and times relative to NOW, never typed in.
 - Sample data is generated RELATIVE TO TODAY on first load (e.g. "yesterday at 18:00", "tomorrow at 12:00") so the demo always looks live whenever it's opened.
 - Save everything in localStorage. Wrap every read/write in try/catch, and the page must still work if storage is blocked.
-- Provide a visible "Reset sample data" button.
+- Provide a visible "Reset sample data" button. Reset restores everything, including notifications.
+
+## WhatsApp (started by the coach only)
+- Use click-to-chat links: `https://wa.me/?text=...` with URL-encoded text and NO phone number, so the coach picks the contact in WhatsApp. Never store or show phone numbers. Open in a new tab.
+- Coach view, on any "Tomorrow" session: button "Send reminder on WhatsApp". Message: "Hi [first name], reminder of your private tomorrow ([day]) at [time]. [price], as agreed. Reply Oss to confirm 👊"
+- Coach view, near the open times: button "Share my open times on WhatsApp". The message lists the open slots for the next 7 days, built from the live data, ready to paste into the club group.
+- Under each button, a small line: "Opens WhatsApp with the message written. You press send."
+- Students never send WhatsApps from the app.
+
+## In-app notifications (coach)
+- Bell icon in the Coach view header with an unread count badge.
+- Every student booking, confirmation and cancellation creates a notification (e.g. "New booking: Aoife, Sat 10:00, €80", "Late cancel: Conor, Wed 12:00"), newest first, saved in localStorage.
+- Opening the list marks them all as read.
+- Seed data includes 2 or 3 unread sample notifications so the bell isn't empty on first load.
 
 ## Sample data (MADE UP, visibly labelled "Sample data")
 - An invented coach (e.g. "Coach Dara Quinn, black belt") at an invented academy, labelled as sample data. No real people, clubs, affiliations or brands anywhere.
@@ -64,11 +77,11 @@ Each must be visibly met in the demo or honestly marked "Planned".
    - Gymdesk (https://docs.gymdesk.com/en/help/docs/add-on-sessions): full gym-management software. It can run privates as bookable sessions with per-instructor calendars and packs, but inside the club's account, set up by the club.
    - BJJNote (https://apps.apple.com/us/app/bjjnote-bjj-training-journal/id6746068256): a student training journal that logs private lessons and each instructor's techniques, but the student types it all themselves and there is no booking.
    - Our view (label it "Our view"): one covers booking, the other covers notes; nothing we found joins the two from the coach's phone.
-4. **The solution in three steps:** Coach shares open times; Student taps a slot and sees the price; After the session: paid and notes logged.
-5. **Requirements table:** requirement, how Side Control meets it, "In the demo" or "Planned".
+4. **The solution in three steps:** Coach shares open times; Student taps a slot and sees the price; After the session: paid and notes logged. Under the steps: "Built for one thumb, between classes: big buttons, one screen per job, nothing to install. Bookings land in the app, not in another WhatsApp chat."
+5. **Requirements table:** exactly the six requirements above: requirement, how Side Control meets it, "In the demo" or "Planned". Planned extras live under "Coming later", not in this table.
 6. **The demo (`#demo`)** with a Coach / Next Stripe toggle and a student picker for the student view.
 7. **"We tested it":** a placeholder block to fill in later (who tried it, what they tried, what broke or confused them, what we changed).
-8. **How it's paid for:** ASSUMPTION, clearly labelled. EUR 9 per month per coach, first month free. Reasoning: one avoided no-show or one forgotten payment (EUR 80) covers about nine months. Planned: semi-private sessions for 2 or 3 people at a lower per-head rate, a Revolut payment link, text reminders, a club-wide plan.
+8. **How it's paid for:** ASSUMPTION, clearly labelled. EUR 9 per month per coach, first month free. Reasoning: one avoided no-show or one forgotten payment (EUR 80) covers about nine months. "Coming later" (Planned): semi-private sessions for 2 or 3 people at a lower per-head rate, a Revolut payment link, automatic WhatsApp reminders that send themselves (needs WhatsApp Business), push notifications to the coach's phone, a club-wide plan.
 9. **Waiting list form** for coaches (name, email, academy). It must NOT send data anywhere: on submit it only shows a thank-you message.
 10. **Footer:** "Side Control is a concept product in development. The coach, academy, students, prices and bookings shown are invented sample data. Gymdesk and BJJNote are named for comparison only and are not affiliated with Side Control." Later, the footer will get a "Behind the build" link to a separate page. Don't build that page or link until asked.
 
