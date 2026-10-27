@@ -417,12 +417,106 @@
   }
 
   // ---------- Views ----------
+  // Next Stripe: the student's view
   function renderStudent() {
-    return `<p class="demo__empty">Next Stripe view coming in the next step.</p>`;
+    const s = student(ui.studentId);
+    const mine = state.bookings.filter((b) => b.studentId === s.id);
+
+    // Your sessions: booked ones still to come (or happening now), plus upcoming ones that were cancelled
+    const coming = mine.filter((b) => isUpcoming(b) || isInProgress(b) ||
+      (b.status === "cancelled" && b.start > now())).sort(byStart);
+
+    const sessions = coming.map((b) => {
+      const tags = [];
+      let actions = "";
+      let body = "";
+      if (b.status === "cancelled") {
+        tags.push(isLateCancel(b) ? tag("Late cancel", "late") : tag("Cancelled", "muted"));
+        return item({ when: whenLabel(b.start), price: money(b.price), tags, cls: "item--cancelled" });
+      }
+      if (isInProgress(b)) tags.push(tag("On the mat now", "live"));
+      if (isTomorrow(b)) tags.push(tag("Tomorrow", "tomorrow"));
+      if (b.confirmed) tags.push(tag("Confirmed", "ok"));
+
+      if (isTomorrow(b) && !b.confirmed) {
+        actions += `<button type="button" class="btn btn--primary" data-action="s-confirm" data-id="${b.id}">Confirm I'm coming</button>`;
+      } else if (!b.confirmed && isUpcoming(b)) {
+        body = `<p class="item__sub">You'll be asked to confirm the day before.</p>`;
+      }
+      if (isUpcoming(b)) {
+        actions += `<button type="button" class="btn btn--quiet" data-action="ask-cancel" data-id="${b.id}">Cancel</button>`;
+      }
+      if (ui.cancelAsk === b.id) {
+        actions = "";
+        body += cancelAsk(b, "s");
+      }
+      return item({ when: whenLabel(b.start), price: `${money(b.price)}<span>locked</span>`, tags, body, actions });
+    }).join("");
+
+    // Book a session: open slots for the next 7 days, grouped by day
+    const groups = groupByDay(openSlots());
+    const slotHTML = groups.map((g) => {
+      const label = daysFromToday(g.key) <= 1 ? `${dayLabel(g.key)}, ${fmtDate(g.key)}` : fmtDate(g.key);
+      const picked = g.slots.includes(ui.selectedSlot) ? ui.selectedSlot : null;
+      const buttons = g.slots.map((t) => `<button type="button" class="slot" data-action="pick-slot" data-start="${t}" aria-pressed="${t === picked}">
+          <span class="slot__time">${fmtTime(t)}</span><span class="slot__price">${money(s.rate)}</span>
+        </button>`).join("");
+      const sheet = picked ? `<div class="sheet" role="group" aria-label="Book this slot">
+          <p class="sheet__when">${fmtDate(picked)}, ${fmtTime(picked)}–${fmtTime(picked + SESSION)}</p>
+          <p class="sheet__meta">1-to-1 with Coach ${esc(coachFirst())} · 60 minutes</p>
+          <p class="sheet__price">${money(s.rate)} <span>your price, locked when you book</span></p>
+          <div class="item__actions">
+            <button type="button" class="btn btn--primary" data-action="book" data-start="${picked}">Book for ${money(s.rate)}</button>
+            <button type="button" class="btn btn--quiet" data-action="unpick">Back</button>
+          </div>
+        </div>` : "";
+      return `<div class="slot-day"><h5 class="slot-day__label">${label}</h5><div class="slots">${buttons}</div>${sheet}</div>`;
+    }).join("");
+
+    // Technique log: sessions that have ended, newest first
+    const log = mine.filter((b) => isEnded(b) || (b.status === "cancelled" && b.start <= now()))
+      .sort(byStartDesc)
+      .map((b) => {
+        if (b.status === "cancelled") {
+          return item({ when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, tags: [isLateCancel(b) ? tag("Late cancel", "late") : tag("Cancelled", "muted")], cls: "item--cancelled" });
+        }
+        const tags = [b.paid ? tag(`Paid · ${b.paid}`, "ok") : tag("To pay", "unpaid")];
+        const body = b.notes ? notesBody(b) : `<p class="item__sub">Coach ${esc(coachFirst())} hasn't logged notes for this one yet.</p>`;
+        return item({ when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, price: money(b.price), tags, body });
+      }).join("");
+
+    return `
+      <div class="vhead">
+        <div>
+          <p class="vhead__eyebrow">Next Stripe</p>
+          <p class="vhead__name">${esc(s.name)}</p>
+          <p class="vhead__meta">${esc(s.belt)} · Your price with Coach ${esc(coachFirst())}: <strong>${money(s.rate)}</strong> per session</p>
+        </div>
+      </div>
+
+      <section class="dm-section" aria-labelledby="st-sessions">
+        <h4 class="dm-h" id="st-sessions">Your sessions</h4>
+        ${sessions ? `<ul class="list">${sessions}</ul>` : `<p class="dm-empty">Nothing booked. Pick a slot below.</p>`}
+      </section>
+
+      <section class="dm-section" aria-labelledby="st-book">
+        <h4 class="dm-h" id="st-book">Book a session</h4>
+        <p class="dm-intro">Coach ${esc(coachFirst())}'s open times for the next 7 days. Tap a time to see your price and book.</p>
+        ${slotHTML || `<p class="dm-empty">No open times in the next 7 days.</p>`}
+      </section>
+
+      <section class="dm-section" aria-labelledby="st-log">
+        <h4 class="dm-h" id="st-log">Your technique log</h4>
+        ${log ? `<ul class="list">${log}</ul>` : `<p class="dm-empty">Your sessions and what you covered will show up here.</p>`}
+      </section>`;
   }
 
   function renderCoach() {
     return `<p class="demo__empty">Coach view coming in the next step.</p>`;
+  }
+
+  function handleCoachAction() {
+    return false;
   }
 
   // ---------- Render ----------
@@ -494,6 +588,59 @@
         resetBtn.dataset.armed = "";
         resetBtn.textContent = "Reset sample data";
       }, 4000);
+    });
+
+    // Every button inside the demo carries a data-action
+    app.addEventListener("click", (event) => {
+      const el = event.target.closest("[data-action]");
+      if (!el || !app.contains(el)) return;
+      const action = el.dataset.action;
+      const id = el.dataset.id;
+      ui.flash = null;
+
+      switch (action) {
+        // ----- Student -----
+        case "pick-slot": {
+          const t = Number(el.dataset.start);
+          ui.selectedSlot = ui.selectedSlot === t ? null : t;
+          ui.cancelAsk = null;
+          if (ui.selectedSlot) ui.focus = '[data-action="book"]';
+          break;
+        }
+        case "unpick":
+          ui.selectedSlot = null;
+          break;
+        case "book": {
+          const b = bookSlot(ui.studentId, Number(el.dataset.start));
+          ui.selectedSlot = null;
+          if (b) flash(`Booked: ${fmtDate(b.start)}, ${fmtTime(b.start)} for ${money(b.price)}. It's in your sessions.`);
+          else flash("Sorry, that slot has just gone. Pick another time.", "warn");
+          break;
+        }
+        case "s-confirm":
+          if (confirmBooking(id, "student")) flash(`Confirmed. Coach ${coachFirst()} can see it.`);
+          break;
+        case "ask-cancel":
+          ui.cancelAsk = id;
+          ui.selectedSlot = null;
+          ui.focus = '[data-action$="-cancel-yes"]';
+          break;
+        case "cancel-no":
+          ui.cancelAsk = null;
+          break;
+        case "s-cancel-yes":
+        case "c-cancel-yes": {
+          const b = cancelBooking(id, action === "s-cancel-yes" ? "student" : "coach");
+          ui.cancelAsk = null;
+          if (b) flash(isLateCancel(b)
+            ? `Cancelled ${shortSlot(b.start)}. Less than 24 hours' notice, so it's flagged as a late cancel.`
+            : `Cancelled ${shortSlot(b.start)}. The slot is open again.`, isLateCancel(b) ? "warn" : "ok");
+          break;
+        }
+        default:
+          if (!handleCoachAction(action, el, id)) return;
+      }
+      render();
     });
 
     // Keep the time-based flags live while the page is open
