@@ -534,8 +534,6 @@ img, svg { max-width: 100%; display: block; }
 }
 .brand--footer { margin-bottom: var(--s3); }
 .site-footer p { max-width: 70ch; }
-.site-footer__ai { margin-top: var(--s4); color: var(--on-dark); font-weight: 600; }
-
 /* ---------- Wider screens ---------- */
 @media (min-width: 600px) {
   .hero__actions { flex-direction: row; flex-wrap: wrap; }

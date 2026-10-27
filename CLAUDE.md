@@ -70,7 +70,7 @@ Each must be visibly met in the demo or honestly marked "Planned".
 7. **"We tested it":** a placeholder block to fill in later (who tried it, what they tried, what broke or confused them, what we changed).
 8. **How it's paid for:** ASSUMPTION, clearly labelled. EUR 9 per month per coach, first month free. Reasoning: one avoided no-show or one forgotten payment (EUR 80) covers about nine months. Planned: semi-private sessions for 2 or 3 people at a lower per-head rate, a Revolut payment link, text reminders, a club-wide plan.
 9. **Waiting list form** for coaches (name, email, academy). It must NOT send data anywhere: on submit it only shows a thank-you message.
-10. **Footer:** "Side Control is a concept product in development. The coach, academy, students, prices and bookings shown are invented sample data. Gymdesk and BJJNote are named for comparison only and are not affiliated with Side Control." Plus "Built with AI (Claude)".
+10. **Footer:** "Side Control is a concept product in development. The coach, academy, students, prices and bookings shown are invented sample data. Gymdesk and BJJNote are named for comparison only and are not affiliated with Side Control." Later, the footer will get a "Behind the build" link to a separate page. Don't build that page or link until asked.
 
 ## Honesty rules
 - Never add wording that says or implies this is a student, school or class project.
