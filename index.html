@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en-IE">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Side Control: book private lessons without the back-and-forth</title>
+  <meta name="description" content="Side Control is a concept private-lesson book for BJJ coaches: open times, bookings, rates, payments and technique notes in your pocket. Try the demo on invented sample data.">
+  <meta name="theme-color" content="#1b1d21">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="#top" aria-label="Side Control, back to top">
+        <span class="brand__belt" aria-hidden="true"></span>
+        <span class="brand__name">Side Control</span>
+      </a>
+      <a class="btn btn--small btn--primary" href="#waitlist">Join waiting list</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- 1. Hero -->
+    <section class="hero" id="top">
+      <div class="container hero__inner">
+        <div class="hero__copy">
+          <p class="eyebrow eyebrow--on-dark">For BJJ coaches who teach private lessons</p>
+          <h1 class="hero__title">Your side hustle, under control.</h1>
+          <p class="hero__lead">Book privates without the back-and-forth. Your diary, your rates, your students' notes, in your pocket.</p>
+          <div class="hero__actions">
+            <a class="btn btn--primary" href="#waitlist">Join the coach waiting list</a>
+            <a class="btn btn--ghost" href="#demo">Try the demo</a>
+          </div>
+          <p class="hero__note">Concept product. Demo runs on invented sample data.</p>
+        </div>
+
+        <div class="hero__card" aria-label="Example of the student booking screen, sample data">
+          <div class="mini">
+            <div class="mini__head">
+              <span class="mini__title">Next Stripe</span>
+              <span class="tag tag--sample">Sample data</span>
+            </div>
+            <p class="mini__sub">Coach Dara's open times this week</p>
+            <ul class="mini__slots">
+              <li class="mini__slot"><span>Tue 19:00</span><span class="mini__price">€80</span><span class="mini__state mini__state--open">Open</span></li>
+              <li class="mini__slot mini__slot--taken"><span>Tue 20:00</span><span class="mini__price">–</span><span class="mini__state">Booked</span></li>
+              <li class="mini__slot"><span>Wed 12:00</span><span class="mini__price">€80</span><span class="mini__state mini__state--open">Open</span></li>
+              <li class="mini__slot"><span>Sat 10:00</span><span class="mini__price">€80</span><span class="mini__state mini__state--open">Open</span></li>
+            </ul>
+            <div class="mini__belt" aria-hidden="true"><span></span><span></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. The problem -->
+    <section class="section" id="problem" aria-labelledby="problem-title">
+      <div class="container">
+        <p class="eyebrow">The problem</p>
+        <h2 id="problem-title">Booking one private lesson shouldn't take two days of texts</h2>
+        <p class="lead">Your private lessons are your business: your diary, your rates, your students' notes, in your pocket, not in the club's system.</p>
+
+        <div class="grid grid--3 who">
+          <article class="card">
+            <h3 class="card__title">Who pays</h3>
+            <p><strong>The coach.</strong> Black and brown belts in Ireland who teach paid one-to-one sessions on their club's mats as their own side business, whether you part-own the club or coach on someone else's timetable. You pay for it yourself. It's your tool, not the club's.</p>
+          </article>
+          <article class="card">
+            <h3 class="card__title">Who uses it every day</h3>
+            <p><strong>You and your private students.</strong> Mostly adults fitting training around a job, who want a time, a price and a reminder of what they drilled.</p>
+          </article>
+          <article class="card card--muted">
+            <h3 class="card__title">Not the buyer</h3>
+            <p><strong>The club owner.</strong> Side Control is built for the individual coach. A club-wide version is <span class="tag tag--planned">Planned</span></p>
+          </article>
+        </div>
+
+        <div class="quotes">
+          <p class="quotes__label"><span class="tag tag--invented">Illustrative quotes, invented</span></p>
+          <div class="grid grid--2">
+            <blockquote class="quote">
+              <p>“Every time I ask for a private it turns into ‘when suits you?’ / ‘whenever suits you’ for two days.”</p>
+              <footer>Student</footer>
+            </blockquote>
+            <blockquote class="quote">
+              <p>“I thought it was one price, he said another, and then there's that awkward moment at the end of the session.”</p>
+              <footer>Student</footer>
+            </blockquote>
+            <blockquote class="quote">
+              <p>“Three days later I can't remember the sweep we drilled.”</p>
+              <footer>Student</footer>
+            </blockquote>
+            <blockquote class="quote quote--coach">
+              <p>“My private lessons live in twenty WhatsApp chats I can't search.”</p>
+              <footer>Coach</footer>
+            </blockquote>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. How coaches cope today + alternatives -->
+    <section class="section section--alt" id="today" aria-labelledby="today-title">
+      <div class="container">
+        <p class="eyebrow">How it works today</p>
+        <h2 id="today-title">WhatsApp, memory and an awkward chat about money</h2>
+
+        <ol class="steps-today">
+          <li>The coach posts a reminder in the club WhatsApp group.</li>
+          <li>Students DM, or ask after class.</li>
+          <li>Times ping-pong back and forth until something sticks.</li>
+          <li>Sometimes there's a check-in text the day before.</li>
+          <li>The price is agreed verbally, then paid in cash or Revolut afterwards.</li>
+          <li>What was covered lives in the student's memory, or a note on their phone.</li>
+        </ol>
+
+        <h3 class="subhead">What's already out there</h3>
+        <div class="grid grid--2">
+          <article class="card alt">
+            <h4 class="alt__name"><a href="https://docs.gymdesk.com/en/help/docs/add-on-sessions" target="_blank" rel="noopener noreferrer">Gymdesk</a></h4>
+            <p>Full gym-management software. It can run private lessons as bookable sessions, with per-instructor calendars and packs, but inside the club's account, set up by the club.</p>
+            <p class="alt__checked">Checked 27 Oct 2026</p>
+          </article>
+          <article class="card alt">
+            <h4 class="alt__name"><a href="https://apps.apple.com/us/app/bjjnote-bjj-training-journal/id6746068256" target="_blank" rel="noopener noreferrer">BJJNote</a></h4>
+            <p>A student training journal that logs private lessons and each instructor's techniques, but the student types it all in themselves and there's no booking.</p>
+            <p class="alt__checked">Checked 27 Oct 2026</p>
+          </article>
+        </div>
+
+        <aside class="callout">
+          <p class="callout__label">Our view</p>
+          <p>One covers booking, the other covers notes. Nothing we found joins the two up from the coach's phone.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 4. The solution in three steps -->
+    <section class="section" id="how" aria-labelledby="how-title">
+      <div class="container">
+        <p class="eyebrow">How Side Control works</p>
+        <h2 id="how-title">Three steps, no back-and-forth</h2>
+        <ol class="grid grid--3 how">
+          <li class="card how__step">
+            <span class="how__num" aria-hidden="true">1</span>
+            <h3 class="card__title">Coach shares open times</h3>
+            <p>Set your weekly windows once. They're split into one-hour slots, and anything in the past drops off on its own.</p>
+          </li>
+          <li class="card how__step">
+            <span class="how__num" aria-hidden="true">2</span>
+            <h3 class="card__title">Student taps a slot and sees the price</h3>
+            <p>Their own rate, shown before they book and locked to the booking. Once it's booked, nobody else can take that slot.</p>
+          </li>
+          <li class="card how__step">
+            <span class="how__num" aria-hidden="true">3</span>
+            <h3 class="card__title">After the session: paid and notes logged</h3>
+            <p>Mark it Cash or Revolut, tap in what you covered, and it lands in the student's Next Stripe log.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 5. Requirements table -->
+    <section class="section section--alt" id="requirements" aria-labelledby="req-title">
+      <div class="container">
+        <p class="eyebrow">What it has to do</p>
+        <h2 id="req-title">Requirements, and where they stand</h2>
+        <p class="lead">Everything marked “In the demo” works in the demo below. Everything else is marked “Planned”.</p>
+
+        <table class="req">
+          <thead>
+            <tr>
+              <th scope="col">Requirement</th>
+              <th scope="col">How Side Control meets it</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row" data-label="Requirement">Book without messaging</th>
+              <td data-label="How">The student sees the coach's open slots for the next 7 days and books one in 3 taps or fewer.</td>
+              <td data-label="Status"><span class="tag tag--live">In the demo</span></td>
+            </tr>
+            <tr>
+              <th scope="row" data-label="Requirement">No double booking</th>
+              <td data-label="How">A booked slot disappears for everyone else straight away.</td>
+              <td data-label="Status"><span class="tag tag--live">In the demo</span></td>
+            </tr>
+            <tr>
+              <th scope="row" data-label="Requirement">Day-before check</th>
+              <td data-label="How">The day before, a session is flagged “Tomorrow” with a one-tap confirm. Cancelling less than 24 hours before the start is flagged “Late cancel” automatically.</td>
+              <td data-label="Status"><span class="tag tag--live">In the demo</span></td>
+            </tr>
+            <tr>
+              <th scope="row" data-label="Requirement">Price up front</th>
+              <td data-label="How">Each student sees the rate the coach set for them before booking, and it's locked to that booking. Change their rate later and existing bookings stay the same.</td>
+              <td data-label="Status"><span class="tag tag--live">In the demo</span></td>
+            </tr>
+            <tr>
+              <th scope="row" data-label="Requirement">Get paid</th>
+              <td data-label="How">After the session it shows as unpaid until the coach marks it Cash or Revolut. Unpaid sessions stand out, with a running “owed to you” total.</td>
+              <td data-label="Status"><span class="tag tag--live">In the demo</span></td>
+            </tr>
+            <tr>
+              <th scope="row" data-label="Requirement">Notes that stick</th>
+              <td data-label="How">The coach logs what was covered in under a minute with quick-pick chips plus free text. The student sees it in their Next Stripe log.</td>
+              <td data-label="Status"><span class="tag tag--live">In the demo</span></td>
+            </tr>
+            <tr>
+              <th scope="row" data-label="Requirement">Text reminders</th>
+              <td data-label="How">A text to the student the day before, as well as the in-app “Tomorrow” flag.</td>
+              <td data-label="Status"><span class="tag tag--planned">Planned</span></td>
+            </tr>
+            <tr>
+              <th scope="row" data-label="Requirement">Pay by link</th>
+              <td data-label="How">A Revolut payment link on each booking.</td>
+              <td data-label="Status"><span class="tag tag--planned">Planned</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 6. The demo -->
+    <section class="section section--demo" id="demo" aria-labelledby="demo-title">
+      <div class="container">
+        <p class="eyebrow">Try it</p>
+        <h2 id="demo-title">The demo</h2>
+        <p class="lead">Book a slot as a student, then flip to the coach's side and watch it land. Changes save on this device only. Nothing is sent anywhere.</p>
+
+        <div class="demo">
+          <div class="demo__bar">
+            <span class="tag tag--sample">Sample data</span>
+            <button type="button" class="btn btn--small btn--quiet" id="reset-demo">Reset sample data</button>
+          </div>
+
+          <div class="demo__controls">
+            <div class="toggle" role="group" aria-label="Choose a view">
+              <button type="button" class="toggle__btn" data-view="coach" aria-pressed="true">Coach</button>
+              <button type="button" class="toggle__btn" data-view="student" aria-pressed="false">Next Stripe</button>
+            </div>
+            <label class="picker" id="student-picker-wrap" hidden>
+              <span class="picker__label">Viewing as</span>
+              <select id="student-picker" class="picker__select"></select>
+            </label>
+          </div>
+
+          <div class="demo__app" id="demo-app" aria-live="polite">
+            <p class="demo__empty">The interactive demo loads here.</p>
+            <noscript><p class="demo__empty">The demo needs JavaScript switched on.</p></noscript>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. We tested it -->
+    <section class="section" id="tested" aria-labelledby="tested-title">
+      <div class="container">
+        <p class="eyebrow">Reality check</p>
+        <h2 id="tested-title">We tested it</h2>
+        <div class="placeholder">
+          <p class="placeholder__label"><span class="tag tag--planned">To be filled in after testing</span></p>
+          <dl class="placeholder__list">
+            <div><dt>Who tried it</dt><dd>Not filled in yet.</dd></div>
+            <div><dt>What they tried</dt><dd>Not filled in yet.</dd></div>
+            <div><dt>What broke or confused them</dt><dd>Not filled in yet.</dd></div>
+            <div><dt>What we changed</dt><dd>Not filled in yet.</dd></div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. How it's paid for -->
+    <section class="section section--alt" id="pricing" aria-labelledby="pricing-title">
+      <div class="container">
+        <p class="eyebrow">How it's paid for</p>
+        <h2 id="pricing-title">One price, paid by the coach</h2>
+
+        <div class="grid grid--2 pricing">
+          <article class="card price">
+            <p><span class="tag tag--assumption">Assumption</span></p>
+            <p class="price__amount">€9 <span>/ month per coach</span></p>
+            <p class="price__extra">First month free.</p>
+            <p>Why that number: one avoided no-show or one forgotten payment at the sample rate of €80 covers about nine months.</p>
+          </article>
+          <article class="card">
+            <h3 class="card__title">Coming later <span class="tag tag--planned">Planned</span></h3>
+            <ul class="ticks">
+              <li>Semi-private sessions for 2 or 3 people at a lower per-head rate</li>
+              <li>A Revolut payment link on each booking</li>
+              <li>Text reminders the day before</li>
+              <li>A club-wide plan</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Waiting list -->
+    <section class="section section--dark" id="waitlist" aria-labelledby="waitlist-title">
+      <div class="container container--narrow">
+        <p class="eyebrow eyebrow--on-dark">Coaches</p>
+        <h2 id="waitlist-title">Get on the waiting list</h2>
+        <p class="lead">Leave your details and we'll let you know when Side Control opens to coaches.</p>
+
+        <form class="form" id="waitlist-form" novalidate>
+          <div class="field">
+            <label for="wl-name">Your name</label>
+            <input id="wl-name" name="name" type="text" autocomplete="name" required>
+          </div>
+          <div class="field">
+            <label for="wl-email">Email</label>
+            <input id="wl-email" name="email" type="email" autocomplete="email" inputmode="email" required>
+          </div>
+          <div class="field">
+            <label for="wl-academy">Academy <span class="field__opt">(optional)</span></label>
+            <input id="wl-academy" name="academy" type="text" autocomplete="organization">
+          </div>
+          <p class="form__error" id="wl-error" role="alert" hidden></p>
+          <button type="submit" class="btn btn--primary btn--block">Join the waiting list</button>
+          <p class="form__note">This page doesn't send or save your details yet. Submitting only shows a thank-you.</p>
+        </form>
+
+        <div class="thanks" id="waitlist-thanks" tabindex="-1" hidden>
+          <h3>Thanks<span id="thanks-name"></span>.</h3>
+          <p>Nothing was sent or saved: the waiting list isn't collecting details yet. When Side Control opens to coaches, sign-up will go live here.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 10. Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <p class="brand brand--footer"><span class="brand__belt" aria-hidden="true"></span><span class="brand__name">Side Control</span></p>
+      <p>Side Control is a concept product in development. The coach, academy, students, prices and bookings shown are invented sample data. Gymdesk and BJJNote are named for comparison only and are not affiliated with Side Control.</p>
+      <p class="site-footer__ai">Built with AI (Claude)</p>
+    </div>
+  </footer>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
