@@ -149,6 +149,7 @@ img, svg { max-width: 100%; display: block; }
   top: 0;
   z-index: 50;
   background: rgba(27, 29, 33, .96);
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--line-dark);
 }
@@ -472,6 +473,15 @@ img, svg { max-width: 100%; display: block; }
   margin: 0;
   color: var(--muted);
   text-align: center;
+}
+.demo__error {
+  min-height: 0;
+  padding: var(--s4);
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  margin-bottom: var(--s3);
 }
 
 /* We tested it: placeholder */

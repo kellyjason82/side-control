@@ -67,7 +67,7 @@
   // Calendar days between today and t (0 = today, 1 = tomorrow, -1 = yesterday)
   const daysFromToday = (t) => Math.round((dayStart(t) - dayStart(now())) / DAY);
 
-  const pad = (n) => String(n).padStart(2, "0");
+  const pad = (n) => (n < 10 ? "0" : "") + n;
   const fmtTime = (t) => { const d = new Date(t); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
   const fmtDate = (t) => { const d = new Date(t); return `${DAY_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`; };
   const shortSlot = (t) => `${DAY_SHORT[new Date(t).getDay()]} ${fmtTime(t)}`;
@@ -114,9 +114,8 @@
         .filter((w) => w.day === base.getDay())
         .forEach((w) => {
           for (let h = w.start; h < w.end; h++) {
-            const s = new Date(base);
-            s.setHours(h, 0, 0, 0);
-            out.push(s.getTime());
+            // Built from numbers (year, month, day, hour), never from a date string
+            out.push(new Date(base.getFullYear(), base.getMonth(), base.getDate(), h, 0, 0, 0).getTime());
           }
         });
     }
@@ -794,7 +793,7 @@
         const at = list.indexOf(t);
         if (at >= 0) list.splice(at, 1); else list.push(t);
         ui.notesDraft.error = "";
-        ui.focus = `.chip[data-tech="${CSS.escape(t)}"]`;
+        ui.focus = `.chip[data-tech="${t.replace(/["\\]/g, "\\$&")}"]`;
         return true;
       }
       case "save-notes": {
@@ -854,24 +853,36 @@
       .join("");
   }
 
+  // Safety net: show the error inside the demo panel instead of a blank space
+  function showError(err) {
+    if (!app) return;
+    const msg = err && err.message ? err.message : String(err);
+    app.innerHTML = `<p class="demo__empty demo__error">The demo hit an error: ${esc(msg)}</p>`;
+  }
+
   function render() {
     if (!app) return;
-    if (!student(ui.studentId)) ui.studentId = state.students[0].id;
-    syncControls();
-    const warn = storageOK ? "" :
-      `<p class="dm-warn">Your browser is blocking storage, so changes won't survive a refresh.</p>`;
-    const f = ui.flash && ui.flash.view === ui.view
-      ? `<p class="dm-flash dm-flash--${ui.flash.kind}" role="status" tabindex="-1">${esc(ui.flash.text)}</p>` : "";
-    app.innerHTML = warn + f + (ui.view === "coach" ? renderCoach() : renderStudent());
-    if (ui.focus) {
-      const el = app.querySelector(ui.focus);
-      if (el) el.focus();
-      ui.focus = null;
+    try {
+      if (!student(ui.studentId)) ui.studentId = state.students[0].id;
+      syncControls();
+      const warn = storageOK ? "" :
+        `<p class="dm-warn">Your browser is blocking storage, so changes won't survive a refresh.</p>`;
+      const f = ui.flash && ui.flash.view === ui.view
+        ? `<p class="dm-flash dm-flash--${ui.flash.kind}" role="status" tabindex="-1">${esc(ui.flash.text)}</p>` : "";
+      app.innerHTML = warn + f + (ui.view === "coach" ? renderCoach() : renderStudent());
+      app.setAttribute("data-ready", "1");
+      if (ui.focus) {
+        const el = app.querySelector(ui.focus);
+        if (el) el.focus();
+        ui.focus = null;
+      }
+    } catch (err) {
+      showError(err);
     }
   }
 
   // ---------- Events ----------
-  if (app) {
+  if (app) try {
     toggleBtns.forEach((btn) => btn.addEventListener("click", () => {
       ui.view = btn.dataset.view;
       ui.flash = null;
@@ -981,6 +992,8 @@
     }, MIN);
 
     render();
+  } catch (err) {
+    showError(err);
   }
 
   // ---------- Waiting list: shows a thank-you, never sends or saves anything ----------

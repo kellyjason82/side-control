@@ -98,6 +98,13 @@ Each must be visibly met in the demo or honestly marked "Planned".
 - Voice: coach-to-coach, plain, direct, a little BJJ flavour, never cheesy.
 - Avoid using the word "privates" in a way that reads as a double meaning (prefer "private lessons" / "a private" where it could be misread).
 
+## Browser safety (phones, iPhone Safari)
+- Cache-busting: the CSS and JS links in `index.html` carry a version string (`styles.css?v=N`, `app.js?v=N`). Bump N on EVERY change to either file, so phones don't keep the old version.
+- Never parse date strings like "2026-10-28 12:00". Build dates with `new Date(year, monthIndex, day, hour, minute)`, store times as millisecond numbers, or use full ISO strings with a "T".
+- Avoid browser features older iPhone Safari lacks: no `?.`, `??`, regex lookbehind, `Array.prototype.at`, `replaceAll`, `structuredClone`, `CSS.escape`. Use `-webkit-` prefixes where Safari needs them (e.g. `backdrop-filter`).
+- Every localStorage read/write stays inside try/catch.
+- Keep the safety net: if the demo fails to start, the demo panel shows "The demo hit an error: [message]" instead of a blank space.
+
 ## Working rules (from the parent AI Projects CLAUDE.md)
 - Repo: `kellyjason82/side-control`, public, served on GitHub Pages from `main` at `/`.
 - Commit after each meaningful step with a plain-English message, then `git push`. Commit before any big or risky change.

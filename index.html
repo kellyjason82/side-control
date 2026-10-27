@@ -9,7 +9,30 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=4">
+  <script>
+    /* Safety net (old-style JS on purpose, so it runs on any browser):
+       if the demo fails to start, say so inside the demo panel instead of leaving it blank. */
+    (function () {
+      function show(msg) {
+        var el = document.getElementById("demo-app");
+        if (!el) return;
+        var p = document.createElement("p");
+        p.className = "demo__empty demo__error";
+        p.textContent = "The demo hit an error: " + msg;
+        if (el.getAttribute("data-ready")) { el.insertBefore(p, el.firstChild); } else { el.innerHTML = ""; el.appendChild(p); }
+      }
+      window.addEventListener("error", function (e) { show(e && e.message ? e.message : "unknown error"); });
+      window.addEventListener("load", function () {
+        setTimeout(function () {
+          var el = document.getElementById("demo-app");
+          if (el && !el.getAttribute("data-ready") && !el.querySelector(".demo__error")) {
+            show("the demo script didn't start. Try refreshing the page.");
+          }
+        }, 2500);
+      });
+    })();
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -243,7 +266,7 @@
           </div>
 
           <div class="demo__app" id="demo-app" aria-live="polite">
-            <p class="demo__empty">The interactive demo loads here.</p>
+            <p class="demo__empty">Loading the demo…</p>
             <noscript><p class="demo__empty">The demo needs JavaScript switched on.</p></noscript>
           </div>
         </div>
@@ -334,6 +357,6 @@
       <p>Side Control is a concept product in development. The coach, academy, students, prices and bookings shown are invented sample data. Gymdesk and BJJNote are named for comparison only and are not affiliated with Side Control.</p>    </div>
   </footer>
 
-  <script src="app.js" defer></script>
+  <script src="app.js?v=4" defer></script>
 </body>
 </html>
