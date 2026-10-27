@@ -110,3 +110,10 @@ Each must be visibly met in the demo or honestly marked "Planned".
 - Commit after each meaningful step with a plain-English message, then `git push`. Commit before any big or risky change.
 - Never commit passwords, API keys or personal details.
 - Explain each Git/GitHub step in one short line. Windows + PowerShell; quote paths (they contain spaces).
+
+## Build log (private, outside the repo)
+- The build log lives at `../build-log.md`, one level ABOVE this repo. It is private notes.
+- Never copy it into `side-control`, never commit it, never link to it from the page. `build-log.md` is in `.gitignore` as a backstop.
+- After EVERY change, append a dated entry to `../build-log.md` under the right day heading (e.g. `## Tuesday 27 October 2026`; add a new day heading if needed). Each entry says: what changed, why, who asked for it (Jay, Claude chat or Claude Code), and test results (what was tested and how; say plainly if something wasn't tested).
+- Day entries go above the closing sections. Keep these sections at the end of the log, in this order: "Phone test notes", "Prompts that mattered", "Build timeline", "Honesty check".
+- The only public version will be a polished "Behind the build" page made later, with private details removed. Don't build it until asked.
