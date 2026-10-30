@@ -12,10 +12,12 @@
   const HOUR = 60 * MIN;
   const DAY = 24 * HOUR;
   const SESSION = HOUR; // every private lesson is 60 minutes
-  const DATA_VERSION = 2; // bump when the saved shape changes, so old data is replaced by fresh sample data
+  const DATA_VERSION = 3; // bump when the saved shape changes, so old data is replaced by fresh sample data
 
   // Coach settings, and what "Reset sample data" puts back
-  const DEFAULT_SETTINGS = { feeMode: "flagged", feePct: 75, windowHours: 24, nudgeThreshold: 2, payUpfront: true };
+  const DEFAULT_SETTINGS = { feeMode: "flagged", feePct: 75, windowHours: 24, nudgeThreshold: 2, payUpfront: true, pack10Price: 720, pack20Price: 1360 };
+  const PACK_SIZES = [10, 20];
+  const PACK_WARN_AT = 2; // warn the coach and student when this many sessions (or fewer) are left
   const FEE_MODES = [
     { id: "off", label: "Off" },
     { id: "flagged", label: "Flagged students only" },
@@ -81,7 +83,7 @@
   const fmtTime = (t) => { const d = new Date(t); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
   const fmtDate = (t) => { const d = new Date(t); return `${DAY_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`; };
   const shortSlot = (t) => `${DAY_SHORT[new Date(t).getDay()]} ${fmtTime(t)}`;
-  const money = (n) => "€" + n;
+  const money = (n) => "€" + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ","); // €1,360
 
   function dayLabel(t) {
     const o = daysFromToday(t);
@@ -111,7 +113,7 @@
   // doesn't re-flag old cancellations.
   const windowOf = (b) => (b.lateWindow != null ? b.lateWindow : 24) * HOUR;
   const isLateCancel = (b) => b.status === "cancelled" && b.cancelledAt != null && b.start - b.cancelledAt < windowOf(b);
-  const isUnpaid = (b) => isEnded(b) && !b.paid;
+  const isUnpaid = (b) => isEnded(b) && !b.paid && !b.packId; // pack sessions are already paid for by the pack
   const isFeeUnpaid = (b) => !!b.fee && !b.fee.paid;
   const needsNotes = (b) => isEnded(b) && !b.notes;
   const byStart = (a, b) => a.start - b.start;
@@ -167,8 +169,27 @@
       bookings.push(b);
       return b;
     }
-    const notes = (techniques, text, start) => ({ techniques, text, at: start + 2 * HOUR });
+    // extra can add homework ("Practise this") and a video link. Sample links go to example.com.
+    const notes = (techniques, text, start, extra) => Object.assign({ techniques, text, homework: "", video: "", sampleLink: false, at: start + 2 * HOUR }, extra);
+    const hw = (homework, slug) => ({ homework, video: slug ? "https://example.com/sample/" + slug : "", sampleLink: !!slug });
     let t;
+
+    // Tomás bought a 10-session pack and has used 8 of them, so 2 are left (the warning shows on first load)
+    t = at(-60, 20);
+    const packs = [{ id: "p1", studentId: "s4", size: 10, price: 720, boughtAt: t, paid: "Revolut", paidAt: t }];
+    const packLog = [
+      [-58, ["Guard retention"], "Hips square. Feet on the hips, not the floor."],
+      [-51, ["Single leg"], "Head on the inside. Drive the shoulder, don't pull."],
+      [-44, ["Kimura"], "Trap the wrist first, then climb the hips."],
+      [-37, ["Toreando pass"], "Grip the knees, push down, step wide."],
+      [-30, ["Half guard sweep"], "Underhook or nothing."],
+      [-23, ["Mount escape"], "Trap the arm and foot on the same side, then bridge."],
+      [-16, ["Armbar from guard"], "Pinch the knees. Thumb up."]
+    ];
+    packLog.forEach((l) => {
+      t = at(l[0], 19);
+      add("s4", t, { packId: "p1", price: 72, confirmed: true, notes: notes(l[1], l[2], t) });
+    });
 
     // Loyal student: Aoife has a long run of paid sessions (with these and the two below, 11 completed)
     const loyal = [
@@ -189,15 +210,20 @@
 
     // Past and paid, with notes
     t = at(-12, 12);
-    add("s1", t, { confirmed: true, paid: "Revolut", paidAt: t + HOUR, notes: notes(["Knee cut pass", "Guard retention"], "Win the underhook before you cut. 3 x 10 each side.", t) });
+    add("s1", t, { confirmed: true, paid: "Revolut", paidAt: t + HOUR, notes: notes(["Knee cut pass", "Guard retention"], "Win the underhook before you cut. 3 x 10 each side.", t,
+      hw("20 knee cut entries each side before Thursday. Slow, then at speed.", "knee-cut-pass")) });
+    // Tomás's 8th pack session, with notes and homework
     t = at(-9, 19);
-    add("s4", t, { confirmed: true, paid: "Cash", paidAt: t + HOUR, notes: notes(["Side control escape", "Mount escape"], "Frame on the hip first, then shrimp. Stop pushing the chest.", t) });
+    add("s4", t, { packId: "p1", price: 72, confirmed: true, notes: notes(["Side control escape", "Mount escape"], "Frame on the hip first, then shrimp. Stop pushing the chest.", t,
+      hw("Shrimp drill down the mat and back, 5 lengths before each class.", "side-control-escape")) });
     t = at(-7, 10);
-    add("s3", t, { confirmed: true, paid: "Revolut", paidAt: t + HOUR, notes: notes(["Back take", "Rear naked choke"], "Seatbelt before hooks. Hide the choking hand.", t) });
+    add("s3", t, { confirmed: true, paid: "Revolut", paidAt: t + HOUR, notes: notes(["Back take", "Rear naked choke"], "Seatbelt before hooks. Hide the choking hand.", t,
+      hw("Seatbelt to hooks from turtle, 10 reps a side, slow.", "back-take")) });
 
     // Past and unpaid, notes logged
     t = at(-5, 19);
-    add("s2", t, { confirmed: true, notes: notes(["Scissor sweep", "Hip bump sweep"], "If they post, hip bump. If they sit back, scissor.", t) });
+    add("s2", t, { confirmed: true, notes: notes(["Scissor sweep", "Hip bump sweep"], "If they post, hip bump. If they sit back, scissor.", t,
+      hw("Shadow the hip bump 3 x 10 at home. Post the hand, then the hips.", "")) });
 
     // Past, unpaid, needs notes
     t = at(-3, 12);
@@ -233,7 +259,7 @@
     // Upcoming, in real open-time slots (so they block those slots)
     const later = windowSlots(availability, 2, 6);
     const up1 = add("s3", later[0], { createdAt: now() - 26 * HOUR });
-    add("s4", later[2], { createdAt: now() - 3 * DAY });
+    add("s7", later[2], { createdAt: now() - 3 * DAY });
     const up3 = add("s1", later[4], { createdAt: now() - 2 * HOUR });
 
     const notifications = [
@@ -249,13 +275,13 @@
       coach: { name: "Dara Quinn", belt: "Black belt", academy: "Slate Lane Academy" },
       standardRate: 80,
       settings: Object.assign({}, DEFAULT_SETTINGS),
-      students, availability, bookings, notifications
+      students, availability, bookings, notifications, packs
     };
   }
 
   // ---------- Load / save ----------
   const isValid = (s) => s && s.version === DATA_VERSION && s.coach && s.settings &&
-    ["students", "bookings", "availability", "notifications"].every((k) => Array.isArray(s[k]));
+    ["students", "bookings", "availability", "notifications", "packs"].every((k) => Array.isArray(s[k]));
 
   let state = readJSON(STORE_KEY);
   if (!isValid(state)) state = makeSeed();
@@ -282,9 +308,29 @@
   const openSlots = () => windowSlots(state.availability, 0, 6).filter((t) => !isTaken(t));
   const unpaid = () => state.bookings.filter(isUnpaid);
   const unpaidFees = () => state.bookings.filter(isFeeUnpaid);
+  const unpaidPacks = () => state.packs.filter((p) => !p.paid);
   const owedFor = (list) => list.reduce((sum, b) => sum + (isUnpaid(b) ? b.price : 0) + (isFeeUnpaid(b) ? b.fee.amount : 0), 0);
-  const owedTotal = () => owedFor(state.bookings);
-  const owedBy = (sid) => owedFor(state.bookings.filter((b) => b.studentId === sid));
+  const packsOwed = (list) => list.reduce((sum, p) => sum + (p.paid ? 0 : p.price), 0);
+  const owedTotal = () => owedFor(state.bookings) + packsOwed(state.packs);
+  const owedBy = (sid) => owedFor(state.bookings.filter((b) => b.studentId === sid)) +
+    packsOwed(state.packs.filter((p) => p.studentId === sid));
+
+  // ---------- Packs of 10 or 20 sessions: all counted from the bookings ----------
+  const pack = (id) => state.packs.find((p) => p.id === id);
+  // Used: pack sessions that have finished, plus late cancels where the fee was taken as a pack session
+  const packUsed = (p) => state.bookings.filter((b) => b.packId === p.id &&
+    (isEnded(b) || (b.status === "cancelled" && b.packUsed))).length;
+  const packReserved = (p) => state.bookings.filter((b) => b.packId === p.id && (isUpcoming(b) || isInProgress(b))).length;
+  const packLeft = (p) => Math.max(0, p.size - packUsed(p));                    // counts down as sessions finish
+  const packFree = (p) => Math.max(0, p.size - packUsed(p) - packReserved(p));  // still free to book
+  const packsOf = (sid) => state.packs.filter((p) => p.studentId === sid).sort((a, b) => a.boughtAt - b.boughtAt);
+  // The pack a new booking comes out of (oldest first), or none: then it's the student's normal rate
+  const bookingPack = (sid) => packsOf(sid).filter((p) => packFree(p) > 0)[0] || null;
+  // The pack to show: the oldest with sessions left, otherwise the latest one
+  const shownPack = (sid) => { const ps = packsOf(sid); return ps.filter((p) => packLeft(p) > 0)[0] || ps[ps.length - 1] || null; };
+  const perSession = (p) => Math.round(p.price / p.size);
+  const sessionsText = (n) => `${n} session${n === 1 ? "" : "s"}`;
+  const packPrice = (size) => size === 20 ? state.settings.pack20Price : state.settings.pack10Price;
   const completedBy = (sid) => state.bookings.filter((b) => b.studentId === sid && isEnded(b)).length;
   const hoursBy = (sid) => completedBy(sid) * (SESSION / HOUR);
 
@@ -327,15 +373,53 @@
     reloadFromStorage(); // last-second check against the latest saved data
     const s = student(studentId);
     if (!s || !openSlots().includes(start)) return null; // taken, past or not an open time
+    const p = bookingPack(studentId);
     const b = {
       id: uid("b"), studentId, start, price: s.rate, // price locked to the booking
       status: "booked", confirmed: false, cancelledAt: null, cancelledBy: null,
       paid: null, paidAt: null, notes: null, createdAt: now()
     };
+    if (p) { b.packId = p.id; b.price = perSession(p); } // one session from the pack, nothing owed
     state.bookings.push(b);
-    notify(`New booking: ${first(s)}, ${shortSlot(start)}, ${money(b.price)}`);
+    notify(p
+      ? `New booking: ${first(s)}, ${shortSlot(start)}, from pack (${packFree(p)} left)`
+      : `New booking: ${first(s)}, ${shortSlot(start)}, ${money(b.price)}`);
     save();
     return b;
+  }
+
+  // Coach sells a pack. The price is locked to the pack when it's bought.
+  function sellPack(studentId, size) {
+    if (!student(studentId) || PACK_SIZES.indexOf(size) < 0) return null;
+    const p = { id: uid("p"), studentId, size, price: packPrice(size), boughtAt: now(), paid: null, paidAt: null };
+    state.packs.push(p);
+    save();
+    return p;
+  }
+
+  // Only a pack nobody has booked from yet can be removed (e.g. sold by mistake)
+  function removePack(id) {
+    const p = pack(id);
+    if (!p || p.paid || state.bookings.some((b) => b.packId === id)) return false;
+    state.packs = state.packs.filter((x) => x.id !== id);
+    save();
+    return true;
+  }
+
+  function markPackPaid(id, method) {
+    const p = pack(id);
+    if (!p || (method !== "Cash" && method !== "Revolut")) return;
+    p.paid = method;
+    p.paidAt = now();
+    save();
+  }
+
+  function undoPackPaid(id) {
+    const p = pack(id);
+    if (!p) return;
+    p.paid = null;
+    p.paidAt = null;
+    save();
   }
 
   // Returns the booking, null if it can't be confirmed, or "taken" if someone else got the slot first
@@ -367,11 +451,14 @@
     b.cancelledAt = now();
     b.cancelledBy = by;
     b.lateWindow = state.settings.windowHours; // locked to this cancellation
-    // Locked too: changing the settings later doesn't change this fee
-    if (fee > 0) b.fee = { amount: fee, pct: state.settings.feePct, paid: null, paidAt: null };
+    // Locked too: changing the settings later doesn't change this fee.
+    // On a pack booking, the fee is one session from the pack instead of money.
+    if (fee > 0 && b.packId) b.packUsed = true;
+    else if (fee > 0) b.fee = { amount: fee, pct: state.settings.feePct, paid: null, paidAt: null };
     if (by === "student") {
       const who = `${first(student(b.studentId))}, ${shortSlot(b.start)}`;
-      notify(fee > 0 ? `Late-cancel fee: ${who}, ${money(fee)}` : `${isLateCancel(b) ? "Late cancel" : "Cancelled"}: ${who}`);
+      if (b.packUsed) notify(`Late cancel: ${who}, 1 pack session used as the fee`);
+      else notify(fee > 0 ? `Late-cancel fee: ${who}, ${money(fee)}` : `${isLateCancel(b) ? "Late cancel" : "Cancelled"}: ${who}`);
     }
     save();
     return b;
@@ -400,9 +487,12 @@
     if (!whole(next.feePct, 0, 100)) return "Fee amount: a whole number from 0 to 100 (%).";
     if (!whole(next.windowHours, 1, 72)) return "Late-cancel window: a whole number of hours from 1 to 72.";
     if (!whole(next.nudgeThreshold, 1, 10)) return "“Needs a nudge” threshold: a whole number from 1 to 10.";
+    if (!whole(next.pack10Price, 1, 10000)) return "10-session pack price: a whole number of euro from 1 to 10,000.";
+    if (!whole(next.pack20Price, 1, 10000)) return "20-session pack price: a whole number of euro from 1 to 10,000.";
     state.settings = {
       feeMode: next.feeMode, feePct: next.feePct, windowHours: next.windowHours,
-      nudgeThreshold: next.nudgeThreshold, payUpfront: !!next.payUpfront
+      nudgeThreshold: next.nudgeThreshold, payUpfront: !!next.payUpfront,
+      pack10Price: next.pack10Price, pack20Price: next.pack20Price
     };
     save();
     return null;
@@ -424,10 +514,17 @@
     save();
   }
 
-  function saveNotes(id, techniques, text) {
+  // Only plain web links are kept; nothing is uploaded, the link just opens in a new tab
+  const isWebLink = (u) => /^https?:\/\/[^\s"'<>]+\.[^\s"'<>]+$/i.test(u);
+
+  function saveNotes(id, d) {
     const b = booking(id);
     if (!b || !isEnded(b)) return;
-    b.notes = { techniques: techniques.slice(), text: text.trim(), at: now() };
+    const video = d.video.trim();
+    b.notes = {
+      techniques: d.techniques.slice(), text: d.text.trim(), homework: d.homework.trim(),
+      video: isWebLink(video) ? video : "", sampleLink: false, at: now()
+    };
     save();
   }
 
@@ -501,6 +598,7 @@
     notes: '<path d="M4.5 19.5h4l10-10-4-4-10 10z"/><path d="M13 7l4 4"/>',
     nudge: '<path d="M6 21V4M6 4.5h11l-2.5 4 2.5 4H6"/>',
     upfront: '<rect x="5" y="11" width="14" height="9.5" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/>',
+    pack: '<rect x="3.5" y="8" width="13" height="12" rx="1.5"/><path d="M7.5 8V5.5a1.5 1.5 0 0 1 1.5-1.5h10a1.5 1.5 0 0 1 1.5 1.5v10a1.5 1.5 0 0 1-1.5 1.5h-2.5"/>',
     now: '<circle cx="12" cy="12" r="4.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="8.5"/>'
   };
   const icon = (kind) => ICON_PATHS[kind]
@@ -540,7 +638,8 @@
   function tapOutAsk(b) {
     const fee = feeIfTapOut(b);
     let text = "Tap out of this session? The slot opens up again for others.";
-    if (fee > 0) text = `<strong>Tapping out now means a late-cancel fee of ${money(fee)}.</strong> Still tap out?`;
+    if (fee > 0 && b.packId) text = `<strong>Tapping out now uses 1 session from your pack as the late-cancel fee.</strong> Still tap out?`;
+    else if (fee > 0) text = `<strong>Tapping out now means a late-cancel fee of ${money(fee)}.</strong> Still tap out?`;
     else if (insideWindow(b)) text = `<strong>Less than ${hoursText(state.settings.windowHours)} to go.</strong> This will be flagged as a late cancel. Still tap out?`;
     return `<div class="ask" role="group" aria-label="Tap out of this session?">
       <p>${text}</p>
@@ -560,13 +659,38 @@
   const cancelTags = (b) => {
     const tags = [isLateCancel(b) ? tag("Late cancel", "late") : tag("Cancelled", "muted")];
     if (b.fee) tags.push(feeTag(b));
+    if (b.packUsed) tags.push(tag("Fee: 1 pack session used", "pack"));
     return tags;
   };
 
+  const hostOf = (u) => (String(u).match(/^https?:\/\/([^\/?#]+)/i) || [])[1] || "";
+
   function notesBody(b) {
     if (!b.notes) return "";
-    return `<ul class="chips chips--static">${b.notes.techniques.map((t) => `<li class="chip">${esc(t)}</li>`).join("")}</ul>
-      ${b.notes.text ? `<p class="note-text">${esc(b.notes.text)}</p>` : ""}`;
+    const n = b.notes;
+    const techniques = n.techniques && n.techniques.length
+      ? `<ul class="chips chips--static">${n.techniques.map((t) => `<li class="chip">${esc(t)}</li>`).join("")}</ul>` : "";
+    const homework = n.homework
+      ? `<div class="hw"><p class="hw__label">Practise this</p><p class="hw__text">${esc(n.homework)}</p></div>` : "";
+    const video = n.video && isWebLink(n.video)
+      ? `<p class="video"><a href="${esc(n.video)}" target="_blank" rel="noopener noreferrer">Watch the video<span class="sr-only"> (opens in a new tab)</span> ↗</a>
+          <span class="video__host">${esc(hostOf(n.video))}</span>${n.sampleLink ? ` <span class="tag tag--invented">Sample link</span>` : ""}</p>` : "";
+    return techniques + (n.text ? `<p class="note-text">${esc(n.text)}</p>` : "") + homework + video;
+  }
+
+  // Belt badge: a small belt in the student's real belt colour, next to the belt name
+  function beltLabel(belt) {
+    const key = (String(belt).toLowerCase().match(/white|blue|purple|brown|black/) || ["none"])[0];
+    return `<span class="belt belt--${key}" aria-hidden="true"></span>${esc(belt)}`;
+  }
+
+  // Pack status for one student, worked out from the bookings
+  function packWarning(p) {
+    if (!p) return "";
+    const left = packLeft(p);
+    if (left === 0) return tag("Pack used up", "pack");
+    if (left <= PACK_WARN_AT) return tag(`${sessionsText(left)} left in pack`, "pack");
+    return "";
   }
 
   // ---------- UI state ----------
@@ -583,7 +707,8 @@
     settingsError: "",
     settingsSaved: false,
     notesFor: null,
-    notesDraft: { techniques: [], text: "" },
+    notesDraft: { techniques: [], text: "", homework: "", video: "" },
+    moneyMonth: 0,       // 0 = this month, -1 = last month, ...
     winDraft: { day: 5, start: 18, end: 20 },
     winError: "",
     bellOpen: false,
@@ -627,7 +752,7 @@
       const asking = ui.cancelAsk === b.id && ui.cancelAskAt === "card";
       return `<div class="remind" role="group" aria-label="Reminder for tomorrow">
         <p class="remind__eyebrow">Reminder</p>
-        <p class="remind__text">Your private is tomorrow at ${fmtTime(b.start)}, ${money(b.price)}.</p>
+        <p class="remind__text">Your private is tomorrow at ${fmtTime(b.start)}, ${b.packId ? "1 session from your pack" : money(b.price)}.</p>
         ${b.confirmed ? `<p class="remind__ok">${tag("Confirmed", "ok")} Oss! Coach ${esc(coachFirst())} knows you're coming.</p>` : ""}
         ${asking ? tapOutAsk(b) : `<div class="item__actions">${b.confirmed ? "" : ossBtn(b)}${tapOutBtn(b, "card")}</div>`}
         <p class="remind__note">In the full app this arrives as a push notification <span class="tag tag--planned">Planned</span></p>
@@ -639,7 +764,7 @@
       let actions = "";
       let body = "";
       if (b.status === "cancelled") {
-        return item({ when: whenLabel(b.start), price: money(b.price), tags: cancelTags(b), cls: "item--cancelled" });
+        return item({ when: whenLabel(b.start), price: b.packId ? "Pack" : money(b.price), tags: cancelTags(b), cls: "item--cancelled" });
       }
       if (isInProgress(b)) tags.push(tag("On the mat now", "now"));
       if (isTomorrow(b)) tags.push(tag("Tomorrow", "tomorrow"));
@@ -655,23 +780,28 @@
         actions = "";
         body += tapOutAsk(b);
       }
-      return item({ when: whenLabel(b.start), price: `${money(b.price)}<span>locked</span>`, tags, body, actions });
+      return item({ when: whenLabel(b.start), price: b.packId ? "Pack<span>1 session</span>" : `${money(b.price)}<span>locked</span>`, tags, body, actions });
     }).join("");
 
-    // Book a session: open slots for the next 7 days, grouped by day
+    // Book a session: open slots for the next 7 days, grouped by day.
+    // With a pack that has sessions free, a booking uses one of them instead of costing money.
+    const bp = bookingPack(s.id);
+    const slotPrice = bp ? "Pack" : money(s.rate);
     const groups = groupByDay(openSlots());
     const slotHTML = groups.map((g) => {
       const label = daysFromToday(g.key) <= 1 ? `${dayLabel(g.key)}, ${fmtDate(g.key)}` : fmtDate(g.key);
       const picked = g.slots.includes(ui.selectedSlot) ? ui.selectedSlot : null;
       const buttons = g.slots.map((t) => `<button type="button" class="slot" data-action="pick-slot" data-start="${t}" aria-pressed="${t === picked}">
-          <span class="slot__time">${fmtTime(t)}</span><span class="slot__price">${money(s.rate)}</span>
+          <span class="slot__time">${fmtTime(t)}</span><span class="slot__price">${slotPrice}</span>
         </button>`).join("");
       const sheet = picked ? `<div class="sheet" role="group" aria-label="Book this slot">
           <p class="sheet__when">${fmtDate(picked)}, ${fmtTime(picked)}–${fmtTime(picked + SESSION)}</p>
           <p class="sheet__meta">1-to-1 with Coach ${esc(coachFirst())} · 60 minutes</p>
-          <p class="sheet__price">${money(s.rate)} <span>your price, locked when you book</span></p>
+          ${bp
+            ? `<p class="sheet__price sheet__price--pack">1 session from your pack (${packFree(bp)} left)</p>`
+            : `<p class="sheet__price">${money(s.rate)} <span>your price, locked when you book</span></p>`}
           <div class="item__actions">
-            <button type="button" class="btn btn--primary" data-action="book" data-start="${picked}">Book for ${money(s.rate)}</button>
+            <button type="button" class="btn btn--primary" data-action="book" data-start="${picked}">${bp ? "Book with my pack" : "Book for " + money(s.rate)}</button>
             <button type="button" class="btn btn--quiet" data-action="unpick">Back</button>
           </div>
         </div>` : "";
@@ -685,23 +815,39 @@
         if (b.status === "cancelled") {
           return item({ when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, tags: cancelTags(b), cls: "item--cancelled" });
         }
-        const tags = [b.paid ? tag(`Paid · ${b.paid}`, "ok") : tag("To pay", "unpaid")];
+        const tags = [b.packId ? tag("From your pack", "ok") : b.paid ? tag(`Paid · ${b.paid}`, "ok") : tag("To pay", "unpaid")];
         const body = b.notes ? notesBody(b) : `<p class="item__sub">Coach ${esc(coachFirst())} hasn't logged notes for this one yet.</p>`;
-        return item({ when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, price: money(b.price), tags, body });
+        return item({ when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, price: b.packId ? "Pack" : money(b.price), tags, body });
       }).join("");
+
+    // Your pack, if you have one
+    const sp = shownPack(s.id);
+    let packHTML = "";
+    if (sp) {
+      const left = packLeft(sp), booked = packReserved(sp);
+      packHTML = `<div class="packbox${left <= PACK_WARN_AT ? " packbox--warn" : ""}">
+          <p class="packbox__title">Your ${sp.size}-session pack</p>
+          <p class="packbox__left">${left === 0 ? "All used" : `${sessionsText(left)} left`}${booked ? ` <span>(${booked} booked)</span>` : ""}</p>
+          ${packWarning(sp) ? `<p class="item__tags">${packWarning(sp)}</p>` : ""}
+          <p class="item__sub">${left === 0
+            ? `New bookings are back at your rate of ${money(s.rate)}. Ask Coach ${esc(coachFirst())} about another pack.`
+            : `Each booking uses 1 session. ${money(sp.price)} for ${sp.size}, ${sp.paid ? "paid" : "not paid yet"}.`}</p>
+        </div>`;
+    }
 
     return `
       <div class="vhead">
         <div>
           <p class="vhead__eyebrow">Next Stripe</p>
           <p class="vhead__name">${esc(s.name)}</p>
-          <p class="vhead__meta">${esc(s.belt)} · Your price with Coach ${esc(coachFirst())}: <strong>${money(s.rate)}</strong> per session</p>
+          <p class="vhead__meta">${beltLabel(s.belt)} · Your price with Coach ${esc(coachFirst())}: <strong>${money(s.rate)}</strong> per session</p>
         </div>
       </div>
       <div class="stats stats--two">
         <div class="stat"><span class="stat__label">Private lessons completed</span><span class="stat__value">${completedBy(s.id)}</span></div>
         <div class="stat"><span class="stat__label">Hours on the mat</span><span class="stat__value">${hoursBy(s.id)}</span></div>
       </div>
+      ${packHTML}
       ${reminders}
 
       <section class="dm-section" aria-labelledby="st-sessions">
@@ -748,7 +894,7 @@
           : `<p class="dm-empty">Nothing yet. Student bookings, confirmations and cancellations show up here.</p>`}
       </div>` : "";
 
-    const counts = { money: unpaid().length + unpaidFees().length, notes: toLog };
+    const counts = { money: unpaid().length + unpaidFees().length + unpaidPacks().length, notes: toLog };
     const tabs = `<div class="tabs" role="tablist" aria-label="Coach screens">${TABS.map((t) =>
       `<button type="button" class="tab" role="tab" id="tab-${t.id}" data-action="tab" data-tab="${t.id}" aria-selected="${ui.coachTab === t.id}" aria-controls="coach-panel">${t.label}${counts[t.id] ? `<span class="tab__count">${counts[t.id]}</span>` : ""}</button>`).join("")}</div>`;
 
@@ -759,7 +905,7 @@
         <div>
           <p class="vhead__eyebrow">Coach</p>
           <p class="vhead__name">Coach ${esc(state.coach.name)}</p>
-          <p class="vhead__meta">${esc(state.coach.belt)} · ${esc(state.coach.academy)} (invented)</p>
+          <p class="vhead__meta">${beltLabel(state.coach.belt)} · ${esc(state.coach.academy)} (invented)</p>
         </div>
         ${bell}
       </div>
@@ -813,7 +959,7 @@
       body += cancelAsk(b);
     }
     return item({
-      when: whenLabel(b.start), who: `${esc(s.name)} · ${esc(s.belt)}`, price: money(b.price),
+      when: whenLabel(b.start), who: `${esc(s.name)} · ${beltLabel(s.belt)}`, price: b.packId ? "Pack<span>1 session</span>" : money(b.price),
       tags, body, actions, cls: isTomorrow(b) ? "item--tomorrow" : ""
     });
   }
@@ -832,7 +978,7 @@
     const cancelHTML = cancelled.length ? `<h4 class="dm-sub">Recent cancellations</h4><ul class="list">${cancelled.map((b) => {
       const s = student(b.studentId);
       return item({
-        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name), price: money(b.price),
+        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name), price: b.packId ? "Pack" : money(b.price),
         tags: cancelTags(b),
         body: `<p class="item__sub">Cancelled by ${b.cancelledBy === "coach" ? "you" : "the student"}, ${Math.max(0, Math.round((b.start - b.cancelledAt) / HOUR))} hours before the start.</p>`,
         cls: "item--cancelled"
@@ -845,8 +991,108 @@
       cancelHTML;
   }
 
+  // ---------- Monthly money summary: every figure counted from the data ----------
+  const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  // Start and end of a month (offset 0 = this month, -1 = last month), built from numbers
+  function monthRange(offset) {
+    const d = new Date(now());
+    const from = new Date(d.getFullYear(), d.getMonth() + offset, 1, 0, 0, 0, 0);
+    const to = new Date(d.getFullYear(), d.getMonth() + offset + 1, 1, 0, 0, 0, 0);
+    return { from: from.getTime(), to: to.getTime(), label: `${MONTH_NAMES[from.getMonth()]} ${from.getFullYear()}`, year: from.getFullYear(), month: from.getMonth() + 1 };
+  }
+
+  // Every money record that belongs to a month:
+  // payments by the day they were marked paid; losses and amounts owed by the session (or pack) date.
+  function monthRecords(offset) {
+    const r = monthRange(offset);
+    const inMonth = (t) => t != null && t >= r.from && t < r.to;
+    const name = (sid) => student(sid).name;
+    const out = [];
+    state.bookings.forEach((b) => {
+      if (b.paid && !b.packId && inMonth(b.paidAt)) out.push({ at: b.paidAt, who: name(b.studentId), item: `Session payment (${fmtDate(b.start)}, ${fmtTime(b.start)})`, amount: b.price, kind: "taken", method: b.paid });
+      if (b.fee && b.fee.paid && inMonth(b.fee.paidAt)) out.push({ at: b.fee.paidAt, who: name(b.studentId), item: `Late-cancel fee (${fmtDate(b.start)}, ${fmtTime(b.start)})`, amount: b.fee.amount, kind: "taken", method: b.fee.paid, fee: true });
+      if (b.cancelledBy === "student" && isLateCancel(b) && !b.fee && !b.packUsed && inMonth(b.start)) out.push({ at: b.start, who: name(b.studentId), item: "Late cancel, no fee charged", amount: b.price, kind: "lost", method: "" });
+      if (isUnpaid(b) && inMonth(b.start)) out.push({ at: b.start, who: name(b.studentId), item: "Session, not paid yet", amount: b.price, kind: "owed", method: "" });
+      if (isFeeUnpaid(b) && inMonth(b.start)) out.push({ at: b.start, who: name(b.studentId), item: "Late-cancel fee, not paid yet", amount: b.fee.amount, kind: "owed", method: "" });
+    });
+    state.packs.forEach((p) => {
+      if (p.paid && inMonth(p.paidAt)) out.push({ at: p.paidAt, who: name(p.studentId), item: `${p.size}-session pack payment`, amount: p.price, kind: "taken", method: p.paid });
+      if (!p.paid && inMonth(p.boughtAt)) out.push({ at: p.boughtAt, who: name(p.studentId), item: `${p.size}-session pack, not paid yet`, amount: p.price, kind: "owed", method: "" });
+    });
+    return out.sort((a, b) => a.at - b.at);
+  }
+
+  function monthSummary(offset) {
+    const recs = monthRecords(offset);
+    const sum = (f) => recs.filter(f).reduce((t, x) => t + x.amount, 0);
+    return {
+      range: monthRange(offset), records: recs,
+      taken: sum((x) => x.kind === "taken"),
+      cash: sum((x) => x.kind === "taken" && x.method === "Cash"),
+      revolut: sum((x) => x.kind === "taken" && x.method === "Revolut"),
+      fees: sum((x) => x.kind === "taken" && x.fee),
+      lost: sum((x) => x.kind === "lost"),
+      owed: sum((x) => x.kind === "owed")
+    };
+  }
+
+  // CSV of one month's records. Cells are quoted, and cells starting with = + - @ are made safe for spreadsheets.
+  function monthCSV(offset) {
+    const m = monthSummary(offset);
+    const cell = (v) => { let s = String(v); if (/^[=+\-@]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+    const STATUS = { taken: "Taken", lost: "Lost to cancellation", owed: "Still owed" };
+    const lines = [["Date", "Time", "Student", "Item", "Amount (EUR)", "Status", "Paid by"].map(cell).join(",")];
+    m.records.forEach((x) => {
+      const d = new Date(x.at);
+      lines.push([`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, fmtTime(x.at), x.who, x.item, x.amount, STATUS[x.kind], x.method].map(cell).join(","));
+    });
+    lines.push("");
+    [["Taken", m.taken], ["Taken in cash", m.cash], ["Taken by Revolut", m.revolut], ["Late-cancel fees recovered", m.fees], ["Lost to cancellations", m.lost], ["Still owed", m.owed]]
+      .forEach((row) => lines.push([row[0], row[1]].map(cell).join(",")));
+    return { text: lines.join("\r\n"), name: `side-control-${m.range.year}-${pad(m.range.month)}.csv` };
+  }
+
+  // Saves the file to this device. Nothing is sent anywhere.
+  function downloadCSV(offset) {
+    const f = monthCSV(offset);
+    const blob = new Blob(["﻿" + f.text], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = f.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    return f.name;
+  }
+
+  function moneySummaryHTML() {
+    const m = monthSummary(ui.moneyMonth);
+    const title = ui.moneyMonth === 0 ? "This month" : m.range.label;
+    return `<section class="month" aria-labelledby="month-title">
+        <div class="month__nav">
+          <button type="button" class="btn btn--quiet month__arrow" data-action="month-prev" aria-label="Previous month">‹</button>
+          <div class="month__label"><h4 class="dm-h" id="month-title">${title}</h4>${ui.moneyMonth === 0 ? `<p>${m.range.label}</p>` : ""}</div>
+          <button type="button" class="btn btn--quiet month__arrow" data-action="month-next" aria-label="Next month"${ui.moneyMonth >= 0 ? " disabled" : ""}>›</button>
+        </div>
+        <dl class="month__grid">
+          <div class="month__cell month__cell--wide"><dt>Taken</dt><dd>${money(m.taken)}</dd><p>Cash ${money(m.cash)} · Revolut ${money(m.revolut)}</p></div>
+          <div class="month__cell"><dt>Late-cancel fees recovered</dt><dd>${money(m.fees)}</dd></div>
+          <div class="month__cell"><dt>Lost to cancellations</dt><dd>${money(m.lost)}</dd></div>
+          <div class="month__cell month__cell--wide"><dt>Still owed</dt><dd>${money(m.owed)}</dd><p>Sessions, fees and packs dated in ${m.range.label}, not paid yet.</p></div>
+        </dl>
+        <p class="item__sub">Taken counts session payments, pack payments and paid fees, by the day you marked them paid. Lost means late cancels where no fee was charged. All counted from your bookings.</p>
+        <div class="item__actions">
+          <button type="button" class="btn btn--quiet" data-action="download-csv">Download CSV (${m.records.length} record${m.records.length === 1 ? "" : "s"})</button>
+        </div>
+        <p class="wa-note">Saves a file to this device. Nothing is sent anywhere.</p>
+      </section>`;
+  }
+
   function coachMoney() {
-    // Things owed: finished sessions not paid, plus late-cancel fees not paid
+    // Things owed: finished sessions not paid, late-cancel fees not paid, and packs not paid
     const owing = unpaid().map((b) => ({ b, fee: false }))
       .concat(unpaidFees().map((b) => ({ b, fee: true })))
       .sort((x, y) => x.b.start - y.b.start);
@@ -855,6 +1101,15 @@
     const paid = state.bookings.filter((b) => isEnded(b) && b.paid && recent(b)).map((b) => ({ b, fee: false, at: b.paidAt }))
       .concat(state.bookings.filter((b) => b.fee && b.fee.paid && recent(b)).map((b) => ({ b, fee: true, at: b.fee.paidAt })))
       .sort((x, y) => y.b.start - x.b.start);
+    const packsDue = unpaidPacks().sort((a, b) => a.boughtAt - b.boughtAt);
+    const packsPaid = state.packs.filter((p) => p.paid && p.paidAt > now() - 21 * DAY).sort((a, b) => b.paidAt - a.paidAt);
+    const packItem = (p, isPaid) => item({
+      when: `${p.size}-session pack`, who: `${esc(student(p.studentId).name)} · bought ${fmtDate(p.boughtAt)}`, price: money(p.price),
+      tags: isPaid ? [tag(`Paid · ${p.paid}`, "ok")] : [tag("Unpaid", "unpaid")], cls: isPaid ? "" : "item--unpaid",
+      actions: isPaid
+        ? `<button type="button" class="btn btn--small btn--quiet" data-action="undo-pack-paid" data-pack="${p.id}">Undo</button>`
+        : ["Cash", "Revolut"].map((m) => `<button type="button" class="btn btn--quiet" data-action="pack-paid" data-method="${m}" data-pack="${p.id}">Paid: ${m}</button>`).join("")
+    });
 
     const payButtons = (b, fee) => ["Cash", "Revolut"].map((m) =>
       `<button type="button" class="btn btn--quiet" data-action="${fee ? "fee-paid" : "paid"}" data-method="${m}" data-id="${b.id}">Paid: ${m}</button>`).join("");
@@ -880,16 +1135,20 @@
     const parts = [];
     if (nSessions) parts.push(`${nSessions} finished session${nSessions > 1 ? "s" : ""}`);
     if (nFees) parts.push(`${nFees} late-cancel fee${nFees > 1 ? "s" : ""}`);
+    if (packsDue.length) parts.push(`${packsDue.length} pack${packsDue.length > 1 ? "s" : ""}`);
+    const allOwing = owingHTML + packsDue.map((p) => packItem(p, false)).join("");
+    const allPaid = paidHTML + packsPaid.map((p) => packItem(p, true)).join("");
 
     return `<div class="owed${owed ? "" : " owed--clear"}" style="margin-top:16px">
         <p class="owed__label">Owed to you</p>
         <p class="owed__value">${money(owed)}</p>
-        <p>${parts.length ? `${parts.join(" and ")} not marked paid yet.` : "All square. Nobody owes you anything."}</p>
+        <p>${parts.length ? `${parts.join(", ")} not marked paid yet.` : "All square. Nobody owes you anything."}</p>
       </div>
+      ${moneySummaryHTML()}
       <h4 class="dm-sub">Unpaid</h4>
-      ${owingHTML ? `<ul class="list">${owingHTML}</ul>` : `<p class="dm-empty">Nothing unpaid.</p>`}
+      ${allOwing ? `<ul class="list">${allOwing}</ul>` : `<p class="dm-empty">Nothing unpaid.</p>`}
       <h4 class="dm-sub">Paid, last 3 weeks</h4>
-      ${paidHTML ? `<ul class="list">${paidHTML}</ul>` : `<p class="dm-empty">No payments marked yet.</p>`}`;
+      ${allPaid ? `<ul class="list">${allPaid}</ul>` : `<p class="dm-empty">No payments marked yet.</p>`}`;
   }
 
   function notesEditor(b) {
@@ -900,6 +1159,11 @@
         `<button type="button" class="chip" data-action="chip" data-tech="${esc(t)}" aria-pressed="${d.techniques.includes(t)}">${esc(t)}</button>`).join("")}</div>
       <label class="editor__label" for="notes-text">Anything else? (optional)</label>
       <textarea id="notes-text" class="editor__text" rows="3" maxlength="400" placeholder="e.g. Keep the elbow tight on the cut">${esc(d.text)}</textarea>
+      <label class="editor__label" for="notes-homework">Practise this (optional)</label>
+      <textarea id="notes-homework" class="editor__text" rows="2" maxlength="300" placeholder="e.g. 20 knee cut entries each side before Thursday">${esc(d.homework)}</textarea>
+      <label class="editor__label" for="notes-video">Video link (optional)</label>
+      <input id="notes-video" class="editor__text" type="url" inputmode="url" autocomplete="off" maxlength="500" placeholder="https://…" value="${esc(d.video)}" aria-describedby="notes-video-hint">
+      <p class="editor__hint" id="notes-video-hint">A link to a video you've found or filmed. It opens in a new tab. Nothing is uploaded.</p>
       ${d.error ? `<p class="dm-error" role="alert">${esc(d.error)}</p>` : ""}
       <div class="item__actions">
         <button type="button" class="btn btn--primary" data-action="save-notes" data-id="${b.id}">Save notes</button>
@@ -918,7 +1182,7 @@
       const tags = isTodo ? [tag("Needs notes", "notes")] : [];
       if (isUnpaid(b)) tags.push(tag("Unpaid", "unpaid"));
       return item({
-        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name) + " · " + esc(s.belt), tags,
+        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name) + " · " + beltLabel(s.belt), tags,
         body: editing ? notesEditor(b) : (isTodo ? "" : notesBody(b)),
         actions: editing ? "" : `<button type="button" class="btn ${isTodo ? "btn--primary" : "btn--small btn--quiet"}" data-action="open-notes" data-id="${b.id}">${isTodo ? "Log notes" : "Edit"}</button>`
       });
@@ -943,6 +1207,31 @@
           <div class="stat${late ? " stat--owed" : ""}"><span class="stat__label">Late cancels, last ${NUDGE_DAYS} days</span><span class="stat__value">${late}</span></div>
           <div class="stat${owed ? " stat--owed" : ""}"><span class="stat__label">Owed</span><span class="stat__value">${money(owed)}</span></div>
         </div>
+        ${packPanel(s)}
+      </div>`;
+  }
+
+  // Packs on the coach's student card: what they have, and selling a new one
+  function packPanel(s) {
+    const ps = packsOf(s.id);
+    const rows = ps.slice().reverse().map((p) => {
+      const left = packLeft(p), booked = packReserved(p);
+      const canRemove = !p.paid && !state.bookings.some((b) => b.packId === p.id);
+      return `<div class="packrow">
+          <p class="packrow__head"><strong>${p.size}-session pack</strong> · ${money(p.price)} · bought ${fmtDate(p.boughtAt)}</p>
+          <p class="packrow__left">${left === 0 ? "All used" : `${sessionsText(left)} left`}${booked ? ` (${booked} booked)` : ""}</p>
+          <p class="item__tags">${p.paid ? tag(`Paid · ${p.paid}`, "ok") : tag("Unpaid", "unpaid")} ${packWarning(p)}</p>
+          ${p.paid ? "" : `<div class="item__actions">${["Cash", "Revolut"].map((m) =>
+            `<button type="button" class="btn btn--quiet" data-action="pack-paid" data-method="${m}" data-pack="${p.id}">Paid: ${m}</button>`).join("")}
+            ${canRemove ? `<button type="button" class="btn btn--quiet" data-action="remove-pack" data-pack="${p.id}">Remove</button>` : ""}</div>`}
+        </div>`;
+    }).join("");
+    return `<div class="packs">
+        <p class="packs__title">Packs</p>
+        ${rows || `<p class="item__sub">No pack yet. ${esc(first(s))} pays per session at ${money(s.rate)}.</p>`}
+        <div class="item__actions">${PACK_SIZES.map((n) =>
+          `<button type="button" class="btn btn--quiet" data-action="sell-pack" data-sid="${s.id}" data-size="${n}">Sell ${n} for ${money(packPrice(n))}</button>`).join("")}</div>
+        <p class="item__sub">Pack prices are set in Settings (sample figures). The price is locked when the pack is sold. Each booking uses 1 session, counted off when the session ends.</p>
       </div>`;
   }
 
@@ -954,8 +1243,8 @@
         <div class="rate-row">
           <div>
             <button type="button" class="namebtn" data-action="student-card" data-sid="${s.id}" aria-expanded="${open}" aria-controls="card-${s.id}">${esc(s.name)}<span aria-hidden="true">${open ? "▴" : "▾"}</span></button>
-            <p class="item__who">${esc(s.belt)}${s.rate !== state.standardRate ? " · own rate" : ""}</p>
-            ${needsNudge(s.id) ? `<p class="item__tags">${tag("Needs a nudge", "nudge")}</p>` : ""}
+            <p class="item__who">${beltLabel(s.belt)}${s.rate !== state.standardRate ? " · own rate" : ""}</p>
+            ${needsNudge(s.id) || packWarning(shownPack(s.id)) ? `<p class="item__tags">${needsNudge(s.id) ? tag("Needs a nudge", "nudge") : ""}${packWarning(shownPack(s.id))}</p>` : ""}
           </div>
           <div class="rate-edit">
             <label class="sr-only" for="rate-${s.id}">Rate for ${esc(s.name)} in euro</label>
@@ -964,7 +1253,7 @@
             <button type="button" class="btn btn--small btn--quiet" data-action="save-rate" data-sid="${s.id}">Save</button>
           </div>
         </div>
-        ${next ? `<p class="item__sub">Next booked: ${fmtDate(next.start)}, ${fmtTime(next.start)} at ${money(next.price)} (locked)</p>` : ""}
+        ${next ? `<p class="item__sub">Next booked: ${fmtDate(next.start)}, ${fmtTime(next.start)} ${next.packId ? "from their pack" : `at ${money(next.price)} (locked)`}</p>` : ""}
         ${open ? studentCard(s) : ""}
       </li>`;
     }).join("");
@@ -1017,7 +1306,7 @@
         <div class="set-input"><input id="${id}" type="number" inputmode="numeric" min="${min}" max="${max}" step="${step}" value="${value}"><span>${unit}</span></div>
       </div>`;
     return `<form class="settings" id="settings-form" novalidate>
-        <p class="dm-intro" style="margin-top:16px">Your rules for late cancels. Saved on this device.</p>
+        <p class="dm-intro" style="margin-top:16px">Your rules for late cancels and your pack prices. Saved on this device.</p>
         <fieldset class="set-group">
           <legend>Late-cancel fee</legend>
           <div class="opts">${FEE_MODES.map((m) => `<label class="opt"><input type="radio" name="feeMode" value="${m.id}"${st.feeMode === m.id ? " checked" : ""}> ${m.label}</label>`).join("")}</div>
@@ -1027,6 +1316,10 @@
         ${num("set-threshold", "“Needs a nudge” after this many late cancels in the last 90 days", st.nudgeThreshold, 1, 10, 1, "late cancels")}
         <label class="opt opt--check"><input type="checkbox" id="set-upfront"${st.payUpfront ? " checked" : ""}> Pay upfront for “Needs a nudge” students</label>
         <p class="item__sub">Their bookings show “Pay upfront required”. Taking the payment in the app is <span class="tag tag--planned">Planned</span></p>
+        <h4 class="dm-sub">Pack prices</h4>
+        ${num("set-pack10", "Pack of 10 sessions (sample figure)", st.pack10Price, 1, 10000, 10, "euro")}
+        ${num("set-pack20", "Pack of 20 sessions (sample figure)", st.pack20Price, 1, 10000, 10, "euro")}
+        <p class="item__sub">A pack keeps the price it was sold at, even if you change these later.</p>
         ${ui.settingsError ? `<p class="dm-error" role="alert">${esc(ui.settingsError)}</p>` : ""}
         <div class="item__actions">
           <button type="button" class="btn btn--primary" data-action="save-settings">Save settings</button>
@@ -1044,7 +1337,9 @@
       feePct: Number(f.querySelector("#set-pct").value),
       windowHours: Number(f.querySelector("#set-window").value),
       nudgeThreshold: Number(f.querySelector("#set-threshold").value),
-      payUpfront: f.querySelector("#set-upfront").checked
+      payUpfront: f.querySelector("#set-upfront").checked,
+      pack10Price: Number(f.querySelector("#set-pack10").value),
+      pack20Price: Number(f.querySelector("#set-pack20").value)
     };
   }
 
@@ -1069,6 +1364,41 @@
         ui.settingsSaved = false;
         ui.focus = `#tab-${ui.coachTab}`;
         saveUI();
+        return true;
+      case "sell-pack": {
+        const p = sellPack(el.dataset.sid, Number(el.dataset.size));
+        if (p) flash(`${first(student(p.studentId))} has a ${p.size}-session pack for ${money(p.price)}. Mark it paid when the money comes in. Their next bookings use the pack.`);
+        ui.focus = ".dm-flash";
+        return true;
+      }
+      case "remove-pack":
+        if (removePack(el.dataset.pack)) flash("Pack removed.");
+        return true;
+      case "pack-paid": {
+        const p = pack(el.dataset.pack);
+        markPackPaid(el.dataset.pack, el.dataset.method);
+        if (p) flash(`${first(student(p.studentId))}'s ${p.size}-session pack: paid by ${el.dataset.method}. Owed to you is now ${money(owedTotal())}.`);
+        return true;
+      }
+      case "undo-pack-paid":
+        undoPackPaid(el.dataset.pack);
+        flash(`Pack back to unpaid. Owed to you is now ${money(owedTotal())}.`);
+        return true;
+      case "month-prev":
+        ui.moneyMonth -= 1;
+        ui.focus = '[data-action="month-prev"]';
+        return true;
+      case "month-next":
+        if (ui.moneyMonth < 0) ui.moneyMonth += 1;
+        ui.focus = ui.moneyMonth < 0 ? '[data-action="month-next"]' : '[data-action="month-prev"]';
+        return true;
+      case "download-csv":
+        try {
+          const name = downloadCSV(ui.moneyMonth);
+          flash(`Downloaded ${name} to this device. Nothing was sent anywhere.`);
+        } catch (e) {
+          flash("This browser couldn't save the file. Try another browser.", "warn");
+        }
         return true;
       case "fee-paid": {
         const b = booking(id);
@@ -1110,7 +1440,8 @@
       case "open-notes": {
         const b = booking(id);
         ui.notesFor = id;
-        ui.notesDraft = { techniques: b && b.notes ? b.notes.techniques.slice() : [], text: b && b.notes ? b.notes.text : "", error: "" };
+        const n = b && b.notes ? b.notes : null;
+        ui.notesDraft = { techniques: n ? n.techniques.slice() : [], text: n ? n.text : "", homework: n && n.homework ? n.homework : "", video: n && n.video ? n.video : "", error: "" };
         ui.focus = ".editor .chip";
         return true;
       }
@@ -1125,12 +1456,16 @@
       }
       case "save-notes": {
         const d = ui.notesDraft;
-        if (!d.techniques.length && !d.text.trim()) {
-          d.error = "Tap at least one technique or write a line.";
+        if (d.video.trim() && !isWebLink(d.video.trim())) {
+          d.error = "The video link needs to start with http:// or https://";
+          return true;
+        }
+        if (!d.techniques.length && !d.text.trim() && !d.homework.trim()) {
+          d.error = "Tap at least one technique, or write a line or something to practise.";
           return true;
         }
         const b = booking(id);
-        saveNotes(id, d.techniques, d.text);
+        saveNotes(id, d);
         ui.notesFor = null;
         if (b) flash(`Notes saved. ${first(student(b.studentId))} can see them in Next Stripe.`);
         return true;
@@ -1332,6 +1667,8 @@
     const inSettings = (el) => !!(el && el.closest && el.closest("#settings-form"));
     app.addEventListener("input", (event) => {
       if (event.target.id === "notes-text") ui.notesDraft.text = event.target.value;
+      if (event.target.id === "notes-homework") ui.notesDraft.homework = event.target.value;
+      if (event.target.id === "notes-video") ui.notesDraft.video = event.target.value;
       if (inSettings(event.target)) { ui.settingsDirty = true; ui.settingsSaved = false; }
     });
     app.addEventListener("change", (event) => {

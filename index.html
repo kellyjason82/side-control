@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=7">
   <script>
     /* Safety net (old-style JS on purpose, so it runs on any browser):
        if the demo fails to start, say so inside the demo panel instead of leaving it blank. */
@@ -177,12 +177,13 @@
           <li class="card how__step">
             <span class="how__num" aria-hidden="true">2</span>
             <h3 class="card__title">Student taps a slot and sees the price</h3>
-            <p>Their own rate, shown before they book and locked to the booking. Once it's booked, nobody else can take that slot.</p>
+            <p>Their own rate, shown before they book and locked to the booking. If they've bought a pack of 10 or 20, it says “1 session from your pack” instead. Once it's booked, nobody else can take that slot.</p>
           </li>
           <li class="card how__step">
             <span class="how__num" aria-hidden="true">3</span>
             <h3 class="card__title">After the session: paid and notes logged</h3>
-            <p>Mark it Cash or Revolut, tap in what you covered, and it lands in the student's Next Stripe log.</p>
+            <p>Mark it Cash or Revolut, tap in what you covered, add something to practise and a video link if you like, and it lands in the student's Next Stripe log.</p>
+            <p>Each month, the Money tab adds up what you took in Cash and Revolut, the late-cancel fees you recovered, what cancellations cost you and what's still owed. Download it as a CSV.</p>
           </li>
         </ol>
         <p class="how__note">Built for one thumb, between classes: big buttons, one screen per job, nothing to install. Bookings land in the app, not in another WhatsApp chat.</p>
@@ -200,7 +201,7 @@
       <div class="container">
         <p class="eyebrow">What it has to do</p>
         <h2 id="req-title">Requirements, and where they stand</h2>
-        <p class="lead">Each one works in the demo below.</p>
+        <p class="lead">Each requirement below is shown in the demo. Where part of it depends on something we haven't built yet, the row says so.</p>
 
         <table class="req">
           <thead>
@@ -279,7 +280,7 @@
                 <span class="picker__label">Viewing as</span>
                 <select id="student-picker" class="picker__select" aria-describedby="picker-note"></select>
               </label>
-              <p class="picker__note" id="picker-note">Demo only: in the full app, the student's link opens straight to their own view.</p>
+              <p class="picker__note" id="picker-note">Demo only: in the full app, the student's link opens straight to their own view. (<span class="tag tag--planned">Planned</span>)</p>
             </div>
           </div>
 
@@ -336,6 +337,7 @@
               <li>Uploading videos directly</li>
               <li>A guided walkthrough</li>
               <li>Brazilian Portuguese version (requested in testing)</li>
+              <li>Tax and accountant reports</li>
               <li>A club-wide plan</li>
             </ul>
           </article>
@@ -411,6 +413,6 @@
       <p>Side Control is a concept product in development. The coach, academy, students, prices and bookings shown are invented sample data. Gymdesk and BJJNote are named for comparison only and are not affiliated with Side Control.</p>    </div>
   </footer>
 
-  <script src="app.js?v=6" defer></script>
+  <script src="app.js?v=7" defer></script>
 </body>
 </html>
