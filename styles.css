@@ -1242,3 +1242,6 @@ img, svg { max-width: 100%; display: block; }
 .samples__name:hover { background: var(--white); }
 .namebadges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .namebadges .tag { font-size: 12px; padding: 1px 8px; }
+
+/* Behind the build: one-line "how it was built" in the intro */
+.notes-hero .howbuilt { margin-top: var(--s3); color: var(--on-dark); }

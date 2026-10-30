@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Behind the build: Side Control</title>
-  <meta name="description" content="How Side Control, a concept private-lesson book for BJJ coaches, was built: key decisions, what testing found, the prompts that shaped it and an honesty check.">
+  <meta name="description" content="How Side Control, a concept private-lesson book for BJJ coaches, was built: key decisions, what testing found and an honesty check.">
   <meta name="theme-color" content="#1b1d21">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body class="notes">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -29,25 +29,16 @@
       <div class="container">
         <p class="eyebrow eyebrow--on-dark">Build notes</p>
         <h1>Behind the build</h1>
-        <p>How Side Control went from an idea to a working concept demo: the decisions, what testing broke, the prompts that shaped it and how honest the page is. Side Control is a concept product; the demo runs on invented sample data.</p>
+        <p>How Side Control went from an idea to a working concept demo: the decisions, what testing broke and how honest the page is. Side Control is a concept product; the demo runs on invented sample data.</p>
+        <p class="howbuilt">Built working with Claude Code.</p>
         <ul class="notes-toc" aria-label="On this page">
-          <li><a href="#how-built">How it was built</a></li>
           <li><a href="#decisions">Key decisions</a></li>
           <li><a href="#testing">Testing</a></li>
-          <li><a href="#prompts">Prompts that mattered</a></li>
           <li><a href="#honesty">Honesty check</a></li>
         </ul>
       </div>
     </section>
 
-    <!-- How it was built -->
-    <section class="section" id="how-built" aria-labelledby="how-built-title">
-      <div class="container">
-        <p class="eyebrow">Process</p>
-        <h2 id="how-built-title">How it was built</h2>
-        <p class="howbuilt">Prompts were drafted with Claude in a separate chat, then run and refined in Claude Code.</p>
-      </div>
-    </section>
 
     <!-- Key decisions -->
     <section class="section section--alt" id="decisions" aria-labelledby="decisions-title">
@@ -204,68 +195,10 @@
       </div>
     </section>
 
-    <!-- Prompts that mattered -->
-    <section class="section section--alt" id="prompts" aria-labelledby="prompts-title">
-      <div class="container">
-        <p class="eyebrow">Prompts</p>
-        <h2 id="prompts-title">Prompts that mattered</h2>
-        <p>Eight of the prompts run in Claude Code, picked from its session logs. Excerpts are trimmed; “…” marks a cut and [brackets] mark a small edit for privacy. Times are Irish time.</p>
-        <ol class="prompts">
-          <li class="prompt">
-            <p class="prompt__time"><time datetime="2026-10-27T20:07">Tue 27 Oct, 20:07</time></p>
-            <h3>Brief first, code later</h3>
-            <blockquote>“We're starting a new project from scratch in this empty folder. Before writing any code, create a CLAUDE.md file … that captures the brief below, so every future session follows it. Then reply with a short build plan … Do not build anything yet.”</blockquote>
-            <p class="prompt__led"><strong>Led to:</strong> a written brief that every later session followed, and a plan before any code.</p>
-          </li>
-          <li class="prompt">
-            <p class="prompt__time"><time datetime="2026-10-27T20:09">Tue 27 Oct, 20:09</time></p>
-            <h3>A real product, honestly labelled</h3>
-            <blockquote>“Treat this as a real pre-launch product page for a concept product. … Hero small line becomes: ‘Concept product. Demo runs on invented sample data.’”</blockquote>
-            <p class="prompt__led"><strong>Led to:</strong> the honest framing used across the whole page.</p>
-          </li>
-          <li class="prompt">
-            <p class="prompt__time"><time datetime="2026-10-27T20:26">Tue 27 Oct, 20:26</time></p>
-            <h3>The demo, end to end, with WhatsApp on the coach's terms</h3>
-            <blockquote>“Use click-to-chat links … with URL-encoded text and NO phone number … Never store or show phone numbers. … IN-APP NOTIFICATIONS FOR THE COACH (no WhatsApp from students)”</blockquote>
-            <p class="prompt__led"><strong>Led to:</strong> the working demo (data and rules, student view, coach view) committed in three steps within 11 minutes.</p>
-          </li>
-          <li class="prompt">
-            <p class="prompt__time"><time datetime="2026-10-27T20:49">Tue 27 Oct, 20:49</time></p>
-            <h3>The phone bug</h3>
-            <blockquote>“The demo works on laptop but shows nothing on my phone … Fix this before anything else … Never parse date strings like ‘2026-10-28 12:00’ …”</blockquote>
-            <p class="prompt__led"><strong>Led to:</strong> cache-busting, iPhone-safe code rules written into the brief, and an on-screen error safety net.</p>
-          </li>
-          <li class="prompt">
-            <p class="prompt__time"><time datetime="2026-10-27T21:06">Tue 27 Oct, 21:06</time></p>
-            <h3>Oss, Tap out and late-cancel fees</h3>
-            <blockquote>“Rename the student's confirm button to ‘Oss’ (confirm) and cancel to ‘Tap out’. … Late-cancel fee: Off / Flagged students only / Everyone. … TESTS: run these at 375px and report each”</blockquote>
-            <p class="prompt__led"><strong>Led to:</strong> fees, the “Needs a nudge” flag, coach settings and student cards, plus the habit of asking for specific tests every round.</p>
-          </li>
-          <li class="prompt">
-            <p class="prompt__time"><time datetime="2026-10-30T17:03">Fri 30 Oct, 17:03</time></p>
-            <h3>Real user testing</h3>
-            <blockquote>“New round, based on real user testing. … DOUBLE BOOKING (found in testing: two students in two browsers both booked and both confirmed the same slot) … BLACK BELT COLOUR SCHEME”</blockquote>
-            <p class="prompt__led"><strong>Led to:</strong> the last-second slot check, live updates between tabs, honest wording about the limit, the new colour scheme, and the access, data and hint sections.</p>
-          </li>
-          <li class="prompt">
-            <p class="prompt__time"><time datetime="2026-10-30T17:29">Fri 30 Oct, 17:29</time></p>
-            <h3>The club owner's requests</h3>
-            <blockquote>“PACKS OF 10 OR 20 SESSIONS … MONTHLY MONEY SUMMARY … Add a ‘Download CSV’ button that downloads that month's records to the device (nothing is sent anywhere).”</blockquote>
-            <p class="prompt__led"><strong>Led to:</strong> packs with sessions remaining, homework and video links, and a monthly summary checked against an independent count.</p>
-          </li>
-          <li class="prompt">
-            <p class="prompt__time"><time datetime="2026-10-30T17:53">Fri 30 Oct, 17:53</time></p>
-            <h3>Show the work, honestly</h3>
-            <blockquote>“Build it from [the build log], but strip anything private … HONESTY AUDIT OF THE WHOLE LANDING PAGE … Fix anything that's none of those.”</blockquote>
-            <p class="prompt__led"><strong>Led to:</strong> this page, the filled-in “We tested it” section and four wording fixes on the main page.</p>
-          </li>
-        </ol>
-      </div>
-    </section>
 
 
     <!-- Honesty check -->
-    <section class="section" id="honesty" aria-labelledby="honesty-title">
+    <section class="section section--alt" id="honesty" aria-labelledby="honesty-title">
       <div class="container">
         <p class="eyebrow">Honesty check</p>
         <h2 id="honesty-title">Honesty check of the main page</h2>

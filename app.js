@@ -12,7 +12,7 @@
   const HOUR = 60 * MIN;
   const DAY = 24 * HOUR;
   const SESSION = HOUR; // every private lesson is 60 minutes
-  const APP_VERSION = "10"; // shown on the page as "Demo v10": keep in step with app.js?v=10 in index.html
+  const APP_VERSION = "11"; // shown on the page as "Demo v11": keep in step with app.js?v=11 in index.html
   const DATA_VERSION = 3;// bump when the saved shape changes, so old data is replaced by fresh sample data
 
   // Coach settings, and what "Reset sample data" puts back

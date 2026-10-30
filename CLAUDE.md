@@ -173,8 +173,8 @@ Each must be visibly met in the demo or honestly marked "Planned".
 
 ## Behind the build page (notes.html)
 - A separate public page, same design as the main page (shares `styles.css`), readable at 375px, linked from the main footer as "Behind the build".
-- Sections: How it was built ("Prompts were drafted with Claude in a separate chat, then run and refined in Claude Code."), Key decisions (what changed, why, who drove it: Me, Claude chat or Claude Code, marking where AI suggestions were overruled), What testing found, Prompts that mattered (6 to 8, with time, trimmed excerpt and what it led to), Honesty check. No Build timeline section (removed at the founder's request).
-- Built from the private build log with everything private stripped: no college, course or assignment; no real academy, instructor or tester names; no file paths; no personal details. Excerpts from the Claude Code session logs are trimmed, with [brackets] for privacy edits.
+- The intro includes one line: "Built working with Claude Code." Sections: Key decisions (what changed, why, who drove it: Me, Claude chat or Claude Code, marking where AI suggestions were overruled), What testing found and what we changed, Honesty check. No "How it was built", "Prompts that mattered" or "Build timeline" sections, and no links or references to them (all removed at the founder's request).
+- Built from the private build log with everything private stripped: no college, course or assignment; no real academy, instructor or tester names; no file paths; no personal details.
 - Keep the honesty check up to date when the main page changes.
 
 ## Honesty audit labels
