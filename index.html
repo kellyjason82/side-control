@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=6">
   <script>
     /* Safety net (old-style JS on purpose, so it runs on any browser):
        if the demo fails to start, say so inside the demo panel instead of leaving it blank. */
@@ -186,6 +186,12 @@
           </li>
         </ol>
         <p class="how__note">Built for one thumb, between classes: big buttons, one screen per job, nothing to install. Bookings land in the app, not in another WhatsApp chat.</p>
+
+        <aside class="access" aria-labelledby="access-title">
+          <h3 class="access__title" id="access-title">How students get in</h3>
+          <p>You share your booking link (on WhatsApp, or in the club group). Students open it on their phone: no app to install, no account to create. They pick their name the first time.</p>
+          <p class="access__planned"><span class="tag tag--planned">Planned</span> Sign-in by a one-tap link sent to the student.</p>
+        </aside>
       </div>
     </section>
 
@@ -212,7 +218,7 @@
             </tr>
             <tr>
               <th scope="row" data-label="Requirement">No double booking</th>
-              <td data-label="How">A booked slot disappears for everyone else straight away, and the coach gets an in-app notification instead of another WhatsApp.</td>
+              <td data-label="How">A booked slot disappears for everyone else, and a last-second check stops two people taking the same slot. In this demo that works between tabs on one device; across different phones it needs the shared server (<span class="tag tag--planned">Planned</span>).</td>
               <td data-label="Status"><span class="tag tag--live">In the demo</span></td>
             </tr>
             <tr>
@@ -248,6 +254,15 @@
         <p class="lead">Book a slot as a student, then flip to the coach's side and watch it land. Changes save on this device only. Nothing is sent anywhere.</p>
 
         <div class="demo">
+          <div class="hint" id="demo-hint" role="note" aria-label="Tips for trying the demo">
+            <p class="hint__title">New here? Try this:</p>
+            <ol class="hint__steps">
+              <li>As Aoife, book a slot.</li>
+              <li>Flip to Coach and open the bell.</li>
+              <li>Mark a session paid and log what you covered.</li>
+            </ol>
+            <button type="button" class="hint__close" id="demo-hint-close" aria-label="Dismiss these tips">×</button>
+          </div>
           <div class="demo__bar">
             <span class="tag tag--sample">Sample data</span>
             <button type="button" class="btn btn--small btn--quiet" id="reset-demo">Reset sample data</button>
@@ -259,10 +274,13 @@
               <button type="button" class="toggle__btn" data-view="coach" aria-pressed="true">Coach</button>
               <button type="button" class="toggle__btn" data-view="student" aria-pressed="false">Next Stripe</button>
             </div>
-            <label class="picker" id="student-picker-wrap" hidden>
-              <span class="picker__label">Viewing as</span>
-              <select id="student-picker" class="picker__select"></select>
-            </label>
+            <div class="picker-wrap" id="student-picker-wrap" hidden>
+              <label class="picker">
+                <span class="picker__label">Viewing as</span>
+                <select id="student-picker" class="picker__select" aria-describedby="picker-note"></select>
+              </label>
+              <p class="picker__note" id="picker-note">Demo only: in the full app, the student's link opens straight to their own view.</p>
+            </div>
           </div>
 
           <div class="demo__app" id="demo-app" aria-live="polite">
@@ -306,17 +324,50 @@
           <article class="card">
             <h3 class="card__title">Coming later <span class="tag tag--planned">Planned</span></h3>
             <ul class="ticks">
-              <li>Semi-private sessions for 2 or 3 people at a lower per-head rate</li>
+              <li>A shared server so bookings sync across every phone in real time</li>
+              <li>Sign-in by a one-tap link sent to the student</li>
+              <li>Shared private lessons for 2 or 3 students, requested by a coach in testing who currently coaches two students together</li>
               <li>A Revolut payment link on each booking</li>
               <li>Automatic WhatsApp reminders that send themselves (needs WhatsApp Business)</li>
               <li>Push notifications to the coach's phone</li>
               <li>Push notifications to students, with Oss / Tap out on the lock screen</li>
               <li>Taking upfront payment in the app</li>
               <li>Loyalty rewards (for example a discount on every 10th private)</li>
+              <li>Uploading videos directly</li>
+              <li>A guided walkthrough</li>
+              <li>Brazilian Portuguese version (requested in testing)</li>
               <li>A club-wide plan</li>
             </ul>
           </article>
         </div>
+      </div>
+    </section>
+
+    <!-- Your data -->
+    <section class="section" id="your-data" aria-labelledby="data-title">
+      <div class="container">
+        <p class="eyebrow">Your data</p>
+        <h2 id="data-title">Where your data lives</h2>
+
+        <div class="grid grid--2">
+          <article class="card">
+            <h3 class="card__title">This demo <span class="tag tag--live">In the demo</span></h3>
+            <p>Everything you do here is saved only on this device. Nothing is sent anywhere. Reset sample data wipes it.</p>
+          </article>
+          <article class="card">
+            <h3 class="card__title">When it launches <span class="tag tag--planned">Planned</span></h3>
+            <ul class="ticks">
+              <li>The coach owns their students' data. Side Control stores it for them.</li>
+              <li>Stored on EU servers.</li>
+              <li>Only what's needed: name, a contact, belt, rate, bookings, payment status and technique notes.</li>
+              <li>No card details, because payment happens outside the app.</li>
+              <li>A prompt reminding coaches not to record injuries or medical details in notes.</li>
+              <li>Inactive students deleted after 2 years, unless the coach keeps records for tax.</li>
+              <li>A privacy notice for students, and a data processing agreement for coaches.</li>
+            </ul>
+          </article>
+        </div>
+        <p class="data__legal">Not legal advice: we'll have this reviewed before launch.</p>
       </div>
     </section>
 
@@ -360,6 +411,6 @@
       <p>Side Control is a concept product in development. The coach, academy, students, prices and bookings shown are invented sample data. Gymdesk and BJJNote are named for comparison only and are not affiliated with Side Control.</p>    </div>
   </footer>
 
-  <script src="app.js?v=5" defer></script>
+  <script src="app.js?v=6" defer></script>
 </body>
 </html>

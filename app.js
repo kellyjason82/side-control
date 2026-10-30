@@ -263,6 +263,16 @@
   const save = () => writeJSON(STORE_KEY, state);
   save();
 
+  // Re-read the saved data, so a change made in another tab is never missed or overwritten.
+  // If storage is blocked, the copy in memory carries on.
+  function reloadFromStorage() {
+    const s = readJSON(STORE_KEY);
+    if (!isValid(s)) return false;
+    s.settings = Object.assign({}, DEFAULT_SETTINGS, s.settings);
+    state = s;
+    return true;
+  }
+
   // ---------- Lookups ----------
   const student = (id) => state.students.find((s) => s.id === id);
   const booking = (id) => state.bookings.find((b) => b.id === id);
@@ -314,8 +324,9 @@
   }
 
   function bookSlot(studentId, start) {
+    reloadFromStorage(); // last-second check against the latest saved data
     const s = student(studentId);
-    if (!s || !openSlots().includes(start)) return null; // gone, past or not an open time
+    if (!s || !openSlots().includes(start)) return null; // taken, past or not an open time
     const b = {
       id: uid("b"), studentId, start, price: s.rate, // price locked to the booking
       status: "booked", confirmed: false, cancelledAt: null, cancelledBy: null,
@@ -327,9 +338,19 @@
     return b;
   }
 
+  // Returns the booking, null if it can't be confirmed, or "taken" if someone else got the slot first
   function confirmBooking(id, by) {
+    reloadFromStorage(); // last-second check against the latest saved data
     const b = booking(id);
     if (!b || !isUpcoming(b) || b.confirmed) return null;
+    // If another booking holds the same slot and was made first, this one loses the slot
+    const beaten = state.bookings.some((o) => o.id !== b.id && isBooked(o) && o.start === b.start &&
+      (o.createdAt < b.createdAt || (o.createdAt === b.createdAt && o.id < b.id)));
+    if (beaten) {
+      state.bookings = state.bookings.filter((o) => o.id !== b.id);
+      save();
+      return "taken";
+    }
     b.confirmed = true;
     b.confirmedBy = by;
     if (by === "student") notify(`Confirmed: ${first(student(b.studentId))}, ${shortSlot(b.start)}`);
@@ -454,12 +475,38 @@
     const slots = openSlots();
     if (!slots.length) return `No open times for 1-to-1 sessions with Coach ${coachFirst()} in the next 7 days. More soon.`;
     const lines = groupByDay(slots).map((g) => `${fmtDate(g.key)}: ${g.slots.map(fmtTime).join(", ")}`);
-    return `Open times for 1-to-1 sessions with Coach ${coachFirst()}, next 7 days:\n\n${lines.join("\n")}\n\n1 hour each. Book in Side Control, first come first served.`;
+    return `Open times for 1-to-1 sessions with Coach ${coachFirst()}, next 7 days:\n\n${lines.join("\n")}\n\n1 hour each, first come first served. Book here: ${bookingLink()}`;
+  }
+
+  // The coach's booking link: this page, opened at the demo
+  function bookingLink() {
+    const href = String(window.location.href).split("#")[0].split("?")[0];
+    return /^https?:/.test(href) ? href + "#demo" : "https://kellyjason82.github.io/side-control/#demo";
+  }
+
+  // Shown when a slot went to someone else at the last second, with the next free times
+  function takenMessage() {
+    const next = openSlots().slice(0, 3).map(shortSlot);
+    return "Sorry, that slot was just taken. " +
+      (next.length ? `Next free times: ${next.join(", ")}.` : "No other free times in the next 7 days.");
   }
 
   // ---------- HTML helpers ----------
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const tag = (text, kind) => `<span class="tag tag--${kind}">${esc(text)}</span>`;
+  // Status icons, so no status relies on colour alone (each tag also has its text label)
+  const ICON_PATHS = {
+    tomorrow: '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+    late: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/><path d="M4 4l16 16"/>',
+    unpaid: '<circle cx="12" cy="12" r="8.5"/><path d="M15 8.6a4 4 0 1 0 0 6.8M7.5 11h6M7.5 13.4h6"/>',
+    notes: '<path d="M4.5 19.5h4l10-10-4-4-10 10z"/><path d="M13 7l4 4"/>',
+    nudge: '<path d="M6 21V4M6 4.5h11l-2.5 4 2.5 4H6"/>',
+    upfront: '<rect x="5" y="11" width="14" height="9.5" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/>',
+    now: '<circle cx="12" cy="12" r="4.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="8.5"/>'
+  };
+  const icon = (kind) => ICON_PATHS[kind]
+    ? `<svg class="tag__icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICON_PATHS[kind]}</svg>`
+    : "";
+  const tag = (text, kind) => `<span class="tag tag--${kind}">${icon(kind)}${esc(text)}</span>`;
 
   function item({ when, who = "", price = "", tags = [], body = "", actions = "", cls = "" }) {
     return `<li class="item ${cls}">
@@ -594,7 +641,7 @@
       if (b.status === "cancelled") {
         return item({ when: whenLabel(b.start), price: money(b.price), tags: cancelTags(b), cls: "item--cancelled" });
       }
-      if (isInProgress(b)) tags.push(tag("On the mat now", "live"));
+      if (isInProgress(b)) tags.push(tag("On the mat now", "now"));
       if (isTomorrow(b)) tags.push(tag("Tomorrow", "tomorrow"));
       if (b.confirmed) tags.push(tag("Confirmed", "ok"));
 
@@ -733,7 +780,7 @@
     const tags = [];
     let body = "";
     let actions = "";
-    if (isInProgress(b)) tags.push(tag("On the mat now", "live"));
+    if (isInProgress(b)) tags.push(tag("On the mat now", "now"));
     if (isTomorrow(b)) tags.push(tag("Tomorrow", "tomorrow"));
     tags.push(b.confirmed ? tag("Confirmed", "ok") : tag("Not confirmed yet", "muted"));
     const nudge = isUpcoming(b) && needsNudge(s.id);
@@ -868,7 +915,7 @@
     const row = (b, isTodo) => {
       const s = student(b.studentId);
       const editing = ui.notesFor === b.id;
-      const tags = isTodo ? [tag("Needs notes", "unpaid")] : [];
+      const tags = isTodo ? [tag("Needs notes", "notes")] : [];
       if (isUnpaid(b)) tags.push(tag("Unpaid", "unpaid"));
       return item({
         when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name) + " · " + esc(s.belt), tags,
@@ -1048,7 +1095,7 @@
         return true;
       }
       case "c-confirm":
-        if (confirmBooking(id, "coach")) flash("Marked as confirmed.");
+        { const r = confirmBooking(id, "coach"); if (r === "taken") flash(takenMessage(), "warn"); else if (r) flash("Marked as confirmed."); }
         return true;
       case "paid": {
         const b = booking(id);
@@ -1179,6 +1226,21 @@
       render();
     });
 
+    // Another tab on this device changed the data (a booking, a cancellation, a reset...): refresh this one
+    window.addEventListener("storage", (event) => {
+      if (event.key !== STORE_KEY || !reloadFromStorage()) return;
+      if (ui.selectedSlot && !openSlots().includes(ui.selectedSlot)) {
+        ui.selectedSlot = null;
+        ui.flash = { text: takenMessage(), kind: "warn", view: ui.view }; // no focus jump in a background tab
+      }
+      if (ui.cancelAsk && !booking(ui.cancelAsk)) ui.cancelAsk = null;
+      if (ui.notesFor && !booking(ui.notesFor)) ui.notesFor = null;
+      if (ui.settingsDirty) return; // don't wipe settings the coach is still editing
+      const active = document.activeElement;
+      if (active && app.contains(active) && /INPUT|TEXTAREA|SELECT/.test(active.tagName)) return; // mid-typing
+      render();
+    });
+
     // Reset needs two taps, so it can't happen by accident
     let resetTimer = null;
     resetBtn.addEventListener("click", () => {
@@ -1188,6 +1250,10 @@
         resetBtn.textContent = "Reset sample data";
         state = makeSeed();
         save();
+        // Reset wipes everything this demo saved on the device, so the tips come back too
+        try { window.localStorage.removeItem(HINT_KEY); } catch (e) { storageOK = false; }
+        const tips = document.getElementById("demo-hint");
+        if (tips) tips.hidden = false;
         clearTransient();
         flash("Sample data reset. Everything is back to the start.");
         render();
@@ -1208,6 +1274,8 @@
       const action = el.dataset.action;
       const id = el.dataset.id;
       ui.flash = null;
+      // Work from the latest saved data, in case another tab changed something
+      reloadFromStorage();
 
       switch (action) {
         // ----- Student -----
@@ -1225,11 +1293,11 @@
           const b = bookSlot(ui.studentId, Number(el.dataset.start));
           ui.selectedSlot = null;
           if (b) flash(`Booked: ${fmtDate(b.start)}, ${fmtTime(b.start)} for ${money(b.price)}. It's in your sessions.`);
-          else flash("Sorry, that slot has just gone. Pick another time.", "warn");
+          else flash(takenMessage(), "warn");
           break;
         }
         case "s-confirm":
-          if (confirmBooking(id, "student")) flash(`Oss! Confirmed. Coach ${coachFirst()} can see it.`);
+          { const r = confirmBooking(id, "student"); if (r === "taken") flash(takenMessage(), "warn"); else if (r) flash(`Oss! Confirmed. Coach ${coachFirst()} can see it.`); }
           break;
         case "ask-cancel":
           ui.cancelAsk = id;
@@ -1289,6 +1357,21 @@
     render();
   } catch (err) {
     showError(err);
+  }
+
+  // ---------- "Try this" hint strip: dismissible, remembered on this device ----------
+  const HINT_KEY = "sidecontrol.hint.v1";
+  const hint = document.getElementById("demo-hint");
+  if (hint) {
+    const saved = readJSON(HINT_KEY);
+    if (saved && saved.dismissed) hint.hidden = true;
+    const close = document.getElementById("demo-hint-close");
+    if (close) close.addEventListener("click", () => {
+      hint.hidden = true;
+      writeJSON(HINT_KEY, { dismissed: true });
+      const bar = document.getElementById("reset-demo");
+      if (bar) bar.focus(); // keep keyboard focus somewhere sensible
+    });
   }
 
   // ---------- Waiting list: shows a thank-you, never sends or saves anything ----------
