@@ -123,13 +123,14 @@ Each must be visibly met in the demo or honestly marked "Planned".
 
 ## Design
 - Phone-first, one-handed use: tap targets at least 44px, readable 16px+ text, no horizontal scrolling.
-- Clean and trustworthy: dark charcoal and off-white, with a BLACK BELT palette: black, the red bar (`--red`, the one brand accent) and white stripes. The red bar and white stripes are the brand motif (CSS belt logo mark, the small belt bar before each section eyebrow, list bullets). No blue belt in the BRAND anywhere (changed after a coach in testing called the blue-belt colour "a bit insulting" for an app aimed at black belt coaches). Consistent spacing and a Google Font pairing.
+- Clean and trustworthy: dark charcoal and off-white, with a BLACK BELT palette: black, the red bar (`--red`, the one brand accent) and white stripes. The red bar and white stripes are the brand motif (the small belt bar before each section eyebrow, list bullets). The logo mark is a black belt with the red bar and two white stripes on an OFF-WHITE ROUNDED CHIP (about 50 x 28px), so it reads on the dark header and footer; a bare black belt disappears on dark backgrounds (found on a real iPhone). No decorative belt strips on card edges. No blue belt in the BRAND anywhere (changed after a coach in testing called the blue-belt colour "a bit insulting" for an app aimed at black belt coaches). Consistent spacing and a Google Font pairing.
 - Status colours are never the brand red: teal (`--ok`) for Tomorrow, confirmed, saved and "In the demo"; amber (`--warn`) for Late cancel, Unpaid, Needs notes and Needs a nudge. Every status has a text label AND an icon (`tag()` in `app.js` adds it), never colour alone, and all text passes WCAG AA contrast.
 - Voice: coach-to-coach, plain, direct, a little BJJ flavour, never cheesy.
 - Avoid using the word "privates" in a way that reads as a double meaning (prefer "private lessons" / "a private" where it could be misread).
 
 ## Browser safety (phones, iPhone Safari)
 - Cache-busting: the CSS and JS links in `index.html` carry a version string (`styles.css?v=N`, `app.js?v=N`). Bump N on EVERY change to either file, so phones don't keep the old version.
+- The demo shows "Page vN · Demo vN" under its disclaimer: "Page" is typed in `index.html`, "Demo" comes from `APP_VERSION` in `app.js`. Keep both equal to the `?v=N` number (and `notes.html`'s `styles.css?v=N`), so anyone can check their phone has the latest version.
 - Never parse date strings like "2026-10-28 12:00". Build dates with `new Date(year, monthIndex, day, hour, minute)`, store times as millisecond numbers, or use full ISO strings with a "T".
 - Avoid browser features older iPhone Safari lacks: no `?.`, `??`, regex lookbehind, `Array.prototype.at`, `replaceAll`, `structuredClone`, `CSS.escape`. Use `-webkit-` prefixes where Safari needs them (e.g. `backdrop-filter`).
 - Every localStorage read/write stays inside try/catch.
@@ -178,3 +179,8 @@ Each must be visibly met in the demo or honestly marked "Planned".
 
 ## Honesty audit labels
 - Every claim on index.html is one of: true of the demo, labelled Planned, or labelled Assumption. "Who it's for" and "How coaches cope today" carry an Assumption label. Alternatives are sourced and dated; quotes are labelled invented.
+
+## Find-ability (from the founder's iPhone test)
+- Packs: a "Packs" block at the top of the coach's Diary lists every student with a pack in use, with the low-sessions warning and a "Card" button to their student card. Also on the student card (Students tab) and in that student's Next Stripe view (Tomás in the sample data).
+- Money tab: the "This month" summary is at the very top, with Download CSV under it, then "Owed to you, all time".
+- The "Try this" hint strip includes: "4. In Next Stripe, pick Tomás: his pack has 2 sessions left." and "5. In Coach › Money, see this month's takings and download a CSV."

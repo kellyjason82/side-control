@@ -12,7 +12,8 @@
   const HOUR = 60 * MIN;
   const DAY = 24 * HOUR;
   const SESSION = HOUR; // every private lesson is 60 minutes
-  const DATA_VERSION = 3; // bump when the saved shape changes, so old data is replaced by fresh sample data
+  const APP_VERSION = "9";  // shown on the page as "Demo v9": keep in step with app.js?v=9 in index.html
+  const DATA_VERSION = 3;// bump when the saved shape changes, so old data is replaced by fresh sample data
 
   // Coach settings, and what "Reset sample data" puts back
   const DEFAULT_SETTINGS = { feeMode: "flagged", feePct: 75, windowHours: 24, nudgeThreshold: 2, payUpfront: true, pack10Price: 720, pack20Price: 1360 };
@@ -964,6 +965,20 @@
     });
   }
 
+  // Packs on the coach's home screen: every student with a pack in use, with the low-sessions warning
+  function packsOverview() {
+    const rows = state.students.map((s) => ({ s, p: shownPack(s.id) })).filter((x) => x.p && packLeft(x.p) > 0);
+    const body = rows.length ? `<ul class="packs-ov">${rows.map(({ s, p }) => {
+      const left = packLeft(p);
+      return `<li class="packs-ov__row${left <= PACK_WARN_AT ? " packs-ov__row--warn" : ""}">
+          <div><p class="packs-ov__name">${esc(s.name)}</p><p class="packs-ov__meta">${p.size}-session pack · ${sessionsText(left)} left${p.paid ? "" : " · not paid yet"}</p>
+          ${packWarning(p) ? `<p class="item__tags">${packWarning(p)}</p>` : ""}</div>
+          <button type="button" class="btn btn--small btn--quiet" data-action="open-card" data-sid="${s.id}" aria-label="Open ${esc(s.name)}'s card">Card</button>
+        </li>`;
+    }).join("")}</ul>` : `<p class="dm-empty">No packs in use. Sell one from a student's card in the Students tab.</p>`;
+    return `<h4 class="dm-sub">Packs</h4>${body}`;
+  }
+
   function coachDiary() {
     const live = state.bookings.filter((b) => isUpcoming(b) || isInProgress(b)).sort(byStart);
     const today = live.filter((b) => daysFromToday(b.start) === 0);
@@ -985,7 +1000,7 @@
       });
     }).join("")}</ul>` : "";
 
-    return (today.length ? group("Today", today, "") : "") +
+    return packsOverview() + (today.length ? group("Today", today, "") : "") +
       group("Tomorrow", tomorrow, "Nothing booked for tomorrow.") +
       group("Coming up", later, "Nothing else booked yet. Share your open times to fill the week.") +
       cancelHTML;
@@ -1139,12 +1154,13 @@
     const allOwing = owingHTML + packsDue.map((p) => packItem(p, false)).join("");
     const allPaid = paidHTML + packsPaid.map((p) => packItem(p, true)).join("");
 
-    return `<div class="owed${owed ? "" : " owed--clear"}" style="margin-top:16px">
-        <p class="owed__label">Owed to you</p>
+    // This month's summary first, with Download CSV under it
+    return `${moneySummaryHTML()}
+      <div class="owed${owed ? "" : " owed--clear"}" style="margin-top:16px">
+        <p class="owed__label">Owed to you, all time</p>
         <p class="owed__value">${money(owed)}</p>
         <p>${parts.length ? `${parts.join(", ")} not marked paid yet.` : "All square. Nobody owes you anything."}</p>
       </div>
-      ${moneySummaryHTML()}
       <h4 class="dm-sub">Unpaid</h4>
       ${allOwing ? `<ul class="list">${allOwing}</ul>` : `<p class="dm-empty">Nothing unpaid.</p>`}
       <h4 class="dm-sub">Paid, last 3 weeks</h4>
@@ -1410,6 +1426,12 @@
         undoFeePaid(id);
         flash(`Fee back to unpaid. Owed to you is now ${money(owedTotal())}.`);
         return true;
+      case "open-card": // from the Packs block on the Diary: jump to that student's card
+        ui.coachTab = "students";
+        ui.cardFor = el.dataset.sid;
+        ui.focus = `[data-action="student-card"][data-sid="${el.dataset.sid}"]`;
+        saveUI();
+        return true;
       case "student-card": {
         const sid = el.dataset.sid;
         ui.cardFor = ui.cardFor === sid ? null : sid;
@@ -1544,6 +1566,10 @@
   }
 
   // ---------- Events ----------
+  // Show which version of the demo script this browser is running
+  const versionEl = document.getElementById("demo-version");
+  if (versionEl) versionEl.textContent = APP_VERSION;
+
   if (app) try {
     toggleBtns.forEach((btn) => btn.addEventListener("click", () => {
       ui.view = btn.dataset.view;

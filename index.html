@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=9">
   <script>
     /* Safety net (old-style JS on purpose, so it runs on any browser):
        if the demo fails to start, say so inside the demo panel instead of leaving it blank. */
@@ -75,7 +75,6 @@
               <li class="mini__slot"><span>Wed 12:00</span><span class="mini__price">€80</span><span class="mini__state mini__state--open">Open</span></li>
               <li class="mini__slot"><span>Sat 10:00</span><span class="mini__price">€80</span><span class="mini__state mini__state--open">Open</span></li>
             </ul>
-            <div class="mini__belt" aria-hidden="true"><span></span><span></span></div>
           </div>
         </div>
       </div>
@@ -263,6 +262,8 @@
               <li>As Aoife, book a slot.</li>
               <li>Flip to Coach and open the bell.</li>
               <li>Mark a session paid and log what you covered.</li>
+              <li>In Next Stripe, pick Tomás: his pack has 2 sessions left.</li>
+              <li>In Coach › Money, see this month's takings and download a CSV.</li>
             </ol>
             <button type="button" class="hint__close" id="demo-hint-close" aria-label="Dismiss these tips">×</button>
           </div>
@@ -270,7 +271,7 @@
             <span class="tag tag--sample">Sample data</span>
             <button type="button" class="btn btn--small btn--quiet" id="reset-demo">Reset sample data</button>
           </div>
-          <p class="demo__disclaimer">Invented coach, academy, students and bookings. Prices are sample figures.</p>
+          <p class="demo__disclaimer">Invented coach, academy, students and bookings. Prices are sample figures. <span class="demo__version">Page v9 · Demo v<span id="demo-version">(not loaded)</span></span></p>
 
           <div class="demo__controls">
             <div class="toggle" role="group" aria-label="Choose a view">
@@ -437,6 +438,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=8" defer></script>
+  <script src="app.js?v=9" defer></script>
 </body>
 </html>

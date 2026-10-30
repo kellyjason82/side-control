@@ -178,23 +178,36 @@ img, svg { max-width: 100%; display: block; }
   letter-spacing: .01em;
 }
 /* The logo mark: a small black belt with the red bar and two white stripes */
+/* The logo mark sits on an off-white rounded chip, so the black belt reads on dark and light backgrounds */
 .brand__belt {
   position: relative;
-  width: 32px;
-  height: 12px;
-  border-radius: 2px;
-  background:
-    linear-gradient(90deg, transparent 0 16px, var(--red) 16px 29px, transparent 29px),
-    #0d0e10;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .28);
+  flex: none;
+  width: 50px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .18);
 }
+/* The belt: black, with the red bar near the end */
+.brand__belt::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 7px;
+  width: 38px;
+  height: 14px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent 0 22px, var(--red) 22px 35px, transparent 35px), #0d0e10;
+}
+/* Two white stripes on the red bar */
 .brand__belt::after {
   content: "";
   position: absolute;
-  top: 0; bottom: 0;
-  left: 19px;
+  left: 32px;
+  top: 7px;
   width: 7px;
-  background: repeating-linear-gradient(90deg, var(--stripe) 0 2px, transparent 2px 5px);
+  height: 14px;
+  background: repeating-linear-gradient(90deg, var(--stripe) 0 2px, transparent 2px 4px);
 }
 
 /* Section accent: a tiny belt bar before each eyebrow label */
@@ -275,21 +288,6 @@ img, svg { max-width: 100%; display: block; }
 .mini__price { color: var(--muted); font-weight: 500; }
 .mini__state { text-align: right; font-size: 14px; }
 .mini__state--open { color: var(--ok); }
-/* Black belt along the bottom of the card, with the red bar and white stripes */
-.mini__belt {
-  display: flex;
-  height: 10px;
-  margin: var(--s4) calc(var(--s4) * -1) calc(var(--s4) * -1);
-  background: #0d0e10;
-}
-.mini__belt span:first-child { flex: 1; }
-.mini__belt span:last-child {
-  width: 30%;
-  margin-right: 12%;
-  background:
-    repeating-linear-gradient(90deg, transparent 0 8px, var(--stripe) 8px 12px) 10px 0 / 40px 100% no-repeat,
-    var(--red);
-}
 
 /* ---------- Sections ---------- */
 .section { padding: var(--s8) 0; }
@@ -1209,3 +1207,16 @@ img, svg { max-width: 100%; display: block; }
   .notes-hero h1 { font-size: 60px; }
 }
 .who__label { margin: 0 0 var(--s3); font-size: 15px; color: var(--muted); }
+
+/* ---------- Phone-test round: packs on the Diary, version label ---------- */
+.packs-ov { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.packs-ov__row {
+  display: flex; justify-content: space-between; align-items: center; gap: var(--s3);
+  padding: var(--s3) var(--s4); background: var(--white); border: 1px solid var(--line);
+  border-left: 4px solid var(--ink); border-radius: var(--radius-sm);
+}
+.packs-ov__row--warn { border-left-color: var(--warn); background: #fffaf1; }
+.packs-ov__name { margin: 0; font-weight: 600; }
+.packs-ov__meta { margin: 2px 0 0; font-size: 15px; color: var(--muted); }
+.packs-ov__row .btn { flex: none; }
+.demo__version { display: inline-block; font-weight: 600; color: var(--ink); }
