@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="stylesheet" href="styles.css?v=8">
   <script>
     /* Safety net (old-style JS on purpose, so it runs on any browser):
        if the demo fails to start, say so inside the demo panel instead of leaving it blank. */
@@ -88,6 +88,7 @@
         <h2 id="problem-title">Booking one private lesson shouldn't take two days of texts</h2>
         <p class="lead">Your private lessons are your business: your diary, your rates, your students' notes, in your pocket, not in the club's system.</p>
 
+        <p class="who__label"><span class="tag tag--assumption">Assumption</span> Who we think it's for, before launch.</p>
         <div class="grid grid--3 who">
           <article class="card">
             <h3 class="card__title">Who pays</h3>
@@ -133,6 +134,7 @@
         <p class="eyebrow">How it works today</p>
         <h2 id="today-title">WhatsApp, memory and an awkward chat about money</h2>
 
+        <p class="who__label"><span class="tag tag--assumption">Assumption</span> From our own experience on the mats, not a survey.</p>
         <ol class="steps-today">
           <li>The coach posts a reminder in the club WhatsApp group.</li>
           <li>Students DM, or ask after class.</li>
@@ -177,7 +179,7 @@
           <li class="card how__step">
             <span class="how__num" aria-hidden="true">2</span>
             <h3 class="card__title">Student taps a slot and sees the price</h3>
-            <p>Their own rate, shown before they book and locked to the booking. If they've bought a pack of 10 or 20, it says “1 session from your pack” instead. Once it's booked, nobody else can take that slot.</p>
+            <p>Their own rate, shown before they book and locked to the booking. If they've bought a pack of 10 or 20, it says “1 session from your pack” instead. Once it's booked, the slot disappears for everyone else. (In this demo that works between tabs on one device; across phones it needs the shared server: <span class="tag tag--planned">Planned</span>)</p>
           </li>
           <li class="card how__step">
             <span class="how__num" aria-hidden="true">3</span>
@@ -297,15 +299,35 @@
       <div class="container">
         <p class="eyebrow">Reality check</p>
         <h2 id="tested-title">We tested it</h2>
-        <div class="placeholder">
-          <p class="placeholder__label"><span class="tag tag--planned">To be filled in after testing</span></p>
+        <p class="lead">An informal, hands-on test of the demo before launch.</p>
+        <div class="placeholder tested">
           <dl class="placeholder__list">
-            <div><dt>Who tried it</dt><dd>Not filled in yet.</dd></div>
-            <div><dt>What they tried</dt><dd>Not filled in yet.</dd></div>
-            <div><dt>What broke or confused them</dt><dd>Not filled in yet.</dd></div>
-            <div><dt>What we changed</dt><dd>Not filled in yet.</dd></div>
+            <div><dt>Who tried it</dt><dd>A club owner who teaches private lessons, another coach, and two students testing at the same time.</dd></div>
+            <div><dt>What they tried</dt><dd>Booking as students, the coach view, and two students booking the same slot at once in separate browsers.</dd></div>
+            <div><dt>What broke</dt><dd>Two students both booked and confirmed the same slot: a double booking.</dd></div>
+            <div><dt>What confused them</dt><dd>
+              <ul class="tested__list">
+                <li>No tutorial.</li>
+                <li>How students get access.</li>
+                <li>The blue accent colour: a coach said a blue belt was “a bit insulting” for an app aimed at black belts.</li>
+                <li>Where data is stored.</li>
+                <li>No monthly view of money.</li>
+              </ul></dd></div>
+            <div><dt>What we changed</dt><dd>
+              <ul class="tested__list">
+                <li>A last-second slot check, plus live updates between tabs. Across phones it needs a shared server <span class="tag tag--planned">Planned</span></li>
+                <li>A “How students get in” section.</li>
+                <li>A black belt colour scheme.</li>
+                <li>A “Your data” section.</li>
+                <li>A “Try this” hint strip in the demo.</li>
+                <li>Packs of 10 or 20 sessions, with sessions remaining.</li>
+                <li>Homework and video links in the notes.</li>
+                <li>A monthly money summary with a CSV download.</li>
+              </ul></dd></div>
+            <div><dt>Asked for, now Planned</dt><dd>Shared private lessons for 2 or 3 students, and a Brazilian Portuguese version. <span class="tag tag--planned">Planned</span></dd></div>
           </dl>
         </div>
+        <p class="tested__more">The full story, including a bug found on a real phone: <a href="notes.html#testing">Behind the build</a>.</p>
       </div>
     </section>
 
@@ -378,7 +400,7 @@
       <div class="container container--narrow">
         <p class="eyebrow eyebrow--on-dark">Coaches</p>
         <h2 id="waitlist-title">Get on the waiting list</h2>
-        <p class="lead">Leave your details and we'll let you know when Side Control opens to coaches.</p>
+        <p class="lead">Coach sign-up isn't open yet. When it is, this is where you'll join (<span class="tag tag--planned">Planned</span>). For now the form below only shows a thank-you: nothing is sent or saved.</p>
 
         <form class="form" id="waitlist-form" novalidate>
           <div class="field">
@@ -410,9 +432,11 @@
   <footer class="site-footer">
     <div class="container">
       <p class="brand brand--footer"><span class="brand__belt" aria-hidden="true"></span><span class="brand__name">Side Control</span></p>
-      <p>Side Control is a concept product in development. The coach, academy, students, prices and bookings shown are invented sample data. Gymdesk and BJJNote are named for comparison only and are not affiliated with Side Control.</p>    </div>
+      <p>Side Control is a concept product in development. The coach, academy, students, prices and bookings shown are invented sample data. Gymdesk, BJJNote, WhatsApp and Revolut are named for comparison or description only and are not affiliated with Side Control.</p>
+      <p class="footer__links"><a href="notes.html">Behind the build</a></p>
+    </div>
   </footer>
 
-  <script src="app.js?v=7" defer></script>
+  <script src="app.js?v=8" defer></script>
 </body>
 </html>

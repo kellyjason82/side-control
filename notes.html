@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en-IE">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Behind the build: Side Control</title>
+  <meta name="description" content="How Side Control, a concept private-lesson book for BJJ coaches, was built: key decisions, what testing found, the prompts that shaped it, a timeline and an honesty check.">
+  <meta name="theme-color" content="#1b1d21">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=8">
+</head>
+<body class="notes">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="index.html" aria-label="Side Control, back to the main page">
+        <span class="brand__belt" aria-hidden="true"></span>
+        <span class="brand__name">Side Control</span>
+      </a>
+      <a class="btn btn--small btn--primary" href="index.html#demo">Try the demo</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="notes-hero">
+      <div class="container">
+        <p class="eyebrow eyebrow--on-dark">Build notes</p>
+        <h1>Behind the build</h1>
+        <p>How Side Control went from an idea to a working concept demo: the decisions, what testing broke, the prompts that shaped it and how honest the page is. Side Control is a concept product; the demo runs on invented sample data.</p>
+        <ul class="notes-toc" aria-label="On this page">
+          <li><a href="#how-built">How it was built</a></li>
+          <li><a href="#decisions">Key decisions</a></li>
+          <li><a href="#testing">Testing</a></li>
+          <li><a href="#prompts">Prompts that mattered</a></li>
+          <li><a href="#timeline">Timeline</a></li>
+          <li><a href="#honesty">Honesty check</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- How it was built -->
+    <section class="section" id="how-built" aria-labelledby="how-built-title">
+      <div class="container">
+        <p class="eyebrow">Process</p>
+        <h2 id="how-built-title">How it was built</h2>
+        <p class="howbuilt">Prompts were drafted with Claude in a separate chat, then run and refined in Claude Code.</p>
+      </div>
+    </section>
+
+    <!-- Key decisions -->
+    <section class="section section--alt" id="decisions" aria-labelledby="decisions-title">
+      <div class="container">
+        <p class="eyebrow">Decisions</p>
+        <h2 id="decisions-title">Key decisions</h2>
+        <p class="by-legend">Who drove it:
+          <span class="by by--me">Me</span> (the person building Side Control)
+          <span class="by by--chat">Claude chat</span>
+          <span class="by by--code">Claude Code</span>
+        </p>
+        <ol class="decisions">
+          <li class="decision">
+            <h3>The problem came from the mats, not a list</h3>
+            <p class="decision__who"><span class="by by--me">Me</span> <span class="overruled">Overruled AI suggestions</span></p>
+            <dl>
+              <div><dt>What changed</dt><dd>Claude suggested four project ideas. I chose my own instead: booking private BJJ lessons. A nutrition-tracking idea was dropped because that market is already crowded.</dd></div>
+              <div><dt>Why</dt><dd>It's a problem I've seen first-hand, so the brief could be specific.</dd></div>
+            </dl>
+          </li>
+          <li class="decision">
+            <h3>Invented coach, academy and students</h3>
+            <p class="decision__who"><span class="by by--me">Me</span></p>
+            <dl>
+              <div><dt>What changed</dt><dd>No real academy or instructor appears on the page or in any prompt. The demo uses an invented coach and academy, and the academy name was checked so it doesn't match a real club.</dd></div>
+              <div><dt>Why</dt><dd>Real people's names and businesses don't belong in a concept demo.</dd></div>
+            </dl>
+          </li>
+          <li class="decision">
+            <h3>Research changed the pitch</h3>
+            <p class="decision__who"><span class="by by--chat">Claude chat</span></p>
+            <dl>
+              <div><dt>What changed</dt><dd>The starting assumption was “gym software doesn't do private lessons”. Checking at the source showed Gymdesk does support bookable private sessions. The pitch moved from “nobody has built this” to “the gym software belongs to the club; coaches still run private lessons over WhatsApp from their phone”.</dd></div>
+              <div><dt>Why</dt><dd>It's more honest, and a stronger story. The second alternative, BJJNote, covers notes but not booking.</dd></div>
+            </dl>
+          </li>
+          <li class="decision">
+            <h3>Price shown up front and locked</h3>
+            <p class="decision__who"><span class="by by--me">Me</span></p>
+            <dl>
+              <div><dt>What changed</dt><dd>Two requirements were added: the student sees their own rate before booking, the rate is locked to the booking, and the coach marks it paid as Cash or Revolut.</dd></div>
+              <div><dt>Why</dt><dd>Private lessons are usually agreed verbally, rates vary by student, and that leads to an awkward “I thought it was €X” moment at the end of a session.</dd></div>
+            </dl>
+          </li>
+          <li class="decision">
+            <h3>The name: Side Control, with Next Stripe for students</h3>
+            <p class="decision__who"><span class="by by--me">Me</span> <span class="overruled">Overruled an AI suggestion</span></p>
+            <dl>
+              <div><dt>What changed</dt><dd>Another AI tool suggested “FirstRoll: The Private Coaching Platform”. Claude chat pushed back: a first roll is a beginner's first spar, so the name speaks to the student, not the coach who pays, and “platform” oversells a demo. After a brainstorm, I picked Side Control (the position, the side hustle, and control of the diary) and Next Stripe for the student view.</dd></div>
+              <div><dt>Why</dt><dd>The buyer is the coach. The name had to speak to them.</dd></div>
+            </dl>
+          </li>
+          <li class="decision">
+            <h3>Independence, never concealment</h3>
+            <p class="decision__who"><span class="by by--me">Me</span> <span class="by by--chat">Claude chat</span></p>
+            <dl>
+              <div><dt>What changed</dt><dd>I raised that a coach may not want their private lessons running through the club's system. Claude chat refined it: the point is whose account and data it is, not cost. The pitch became “your diary, your rates, your students' notes”, and the target widened to any black or brown belt teaching private lessons on the side.</dd></div>
+              <div><dt>Why</dt><dd>It's a tool for the coach's own business. It's never framed as hiding income from the club.</dd></div>
+            </dl>
+          </li>
+          <li class="decision">
+            <h3>Treated as a real product, honestly labelled</h3>
+            <p class="decision__who"><span class="by by--me">Me</span></p>
+            <dl>
+              <div><dt>What changed</dt><dd>The page discloses its status the way a start-up would (“Concept product. Demo runs on invented sample data.”). A “Built with AI” footer line was removed and replaced by this page.</dd></div>
+              <div><dt>Why</dt><dd>One line undersold the human direction behind the build. This page tells the full story.</dd></div>
+            </dl>
+          </li>
+          <li class="decision">
+            <h3>Students don't WhatsApp the coach</h3>
+            <p class="decision__who"><span class="by by--me">Me</span> <span class="overruled">Overruled an AI suggestion</span></p>
+            <dl>
+              <div><dt>What changed</dt><dd>WhatsApp is in the demo, but only started by the coach: pre-written click-to-chat messages with no phone numbers stored. The plan had students messaging the coach after booking; I cut that and replaced it with an in-app notification bell.</dd></div>
+              <div><dt>Why</dt><dd>A coach with a dozen private students would be swamped. Bookings should land in the app, not in another chat.</dd></div>
+            </dl>
+          </li>
+          <li class="decision">
+            <h3>Late-cancel fees, “Oss” and “Tap out”</h3>
+            <p class="decision__who"><span class="by by--me">Me</span> <span class="by by--code">Claude Code</span></p>
+            <dl>
+              <div><dt>What changed</dt><dd>I added “Oss” (confirm) and “Tap out” (cancel), late-cancel fees the coach switches on, student stats and a coach-only “Needs a nudge” flag. Claude Code made the detailed calls: the tap-out that reaches the threshold carries the fee, coach cancellations never charge a student, and “Pay upfront required” stays in the coach's view so the student never sees the flag.</dd></div>
+              <div><dt>Why</dt><dd>Fewer lost sessions, and a money reason for a coach to pay for the tool.</dd></div>
+            </dl>
+          </li>
+          <li class="decision">
+            <h3>From belt blue to a black belt colour scheme</h3>
+            <p class="decision__who"><span class="by by--me">Me</span> <span class="overruled">Overruled the original AI-chosen colour</span></p>
+            <dl>
+              <div><dt>What changed</dt><dd>The first design used a belt-blue accent. After a coach in testing called it “a bit insulting” for an app aimed at black belts, I switched the brand to black, the red bar and white stripes. Claude Code moved every status (Tomorrow, Late cancel, Unpaid…) to colours that can't be confused with the brand, each with an icon and a text label. Students still show their real belt colours.</dd></div>
+              <div><dt>Why</dt><dd>The brand has to respect the people who'd pay for it, and statuses must work without colour.</dd></div>
+            </dl>
+          </li>
+          <li class="decision">
+            <h3>Packs, homework and a monthly money view</h3>
+            <p class="decision__who"><span class="by by--me">Me</span> <span class="by by--code">Claude Code</span></p>
+            <dl>
+              <div><dt>What changed</dt><dd>Requested in testing by a club owner: packs of 10 or 20 sessions, homework and a video link in the notes, and a monthly money summary with a CSV download. Claude Code decided how each figure is dated and checked the totals against an independent count.</dd></div>
+              <div><dt>Why</dt><dd>That's how private lessons are often sold and tracked in practice.</dd></div>
+            </dl>
+          </li>
+          <li class="decision">
+            <h3>Private notes, public summary</h3>
+            <p class="decision__who"><span class="by by--me">Me</span></p>
+            <dl>
+              <div><dt>What changed</dt><dd>The day-to-day build log is kept outside the public code. This page is the polished public version, with private details removed.</dd></div>
+              <div><dt>Why</dt><dd>Working notes include things that don't belong on a public page.</dd></div>
+            </dl>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Testing -->
+    <section class="section" id="testing" aria-labelledby="testing-title">
+      <div class="container">
+        <p class="eyebrow">Testing</p>
+        <h2 id="testing-title">What testing found, and what we changed</h2>
+        <ol class="found">
+          <li>
+            <h3>The demo was blank on a real iPhone</h3>
+            <p>The first real-phone check found the demo worked on a laptop but showed nothing on an iPhone. Safari had kept an old copy of the page's files.</p>
+            <p><strong>Changed:</strong> version numbers on the page's files so phones always fetch the latest, code rules that avoid features older iPhone Safari lacks, and an on-screen error message if the demo ever fails to start.</p>
+            <p><strong>Lesson:</strong> AI testing on a laptop isn't the same as a real person on a real phone.</p>
+          </li>
+          <li>
+            <h3>Who tried it, and what they tried</h3>
+            <p>A club owner who teaches private lessons, another coach, and two students testing at the same time. They booked as students, used the coach view, and had two students book the same slot at once in separate browsers.</p>
+          </li>
+          <li>
+            <h3>What broke: a double booking</h3>
+            <p>Two students both booked and confirmed the same slot.</p>
+            <p><strong>Changed:</strong> before any booking or confirmation is saved, the demo re-reads the latest data and checks the slot is still free; if it's gone, the student sees “Sorry, that slot was just taken” with the next free times. Other open tabs update by themselves.</p>
+            <p><strong>Being honest about the limit:</strong> two different browsers or phones keep separate data, so they can't see each other yet. That needs a shared server <span class="tag tag--planned">Planned</span>, and the requirements table now says so.</p>
+          </li>
+          <li>
+            <h3>What confused them, and what we changed</h3>
+            <ul class="tested__list">
+              <li><strong>No tutorial:</strong> a dismissible “Try this” hint strip at the top of the demo.</li>
+              <li><strong>How students get access:</strong> a “How students get in” section, and a note on the demo's student picker.</li>
+              <li><strong>The blue accent:</strong> a black belt colour scheme.</li>
+              <li><strong>Where data is stored:</strong> a “Your data” section, with the launch plan clearly marked Planned.</li>
+              <li><strong>No monthly view of money:</strong> a monthly summary with a CSV download.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Asked for in testing</h3>
+            <p>Built: packs of 10 or 20 sessions with sessions remaining, homework and video links in the notes, and the monthly money summary. Now <span class="tag tag--planned">Planned</span>: shared private lessons for 2 or 3 students, and a Brazilian Portuguese version.</p>
+          </li>
+          <li>
+            <h3>Still to do</h3>
+            <p>A re-test on a real iPhone after the latest changes.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Prompts that mattered -->
+    <section class="section section--alt" id="prompts" aria-labelledby="prompts-title">
+      <div class="container">
+        <p class="eyebrow">Prompts</p>
+        <h2 id="prompts-title">Prompts that mattered</h2>
+        <p>Eight of the thirteen prompts run in Claude Code, picked from its session logs. Excerpts are trimmed; “…” marks a cut and [brackets] mark a small edit for privacy. Times are Irish time.</p>
+        <ol class="prompts">
+          <li class="prompt">
+            <p class="prompt__time"><time datetime="2026-10-27T20:07">Tue 27 Oct, 20:07</time></p>
+            <h3>Brief first, code later</h3>
+            <blockquote>“We're starting a new project from scratch in this empty folder. Before writing any code, create a CLAUDE.md file … that captures the brief below, so every future session follows it. Then reply with a short build plan … Do not build anything yet.”</blockquote>
+            <p class="prompt__led"><strong>Led to:</strong> a written brief that every later session followed, and a plan before any code.</p>
+          </li>
+          <li class="prompt">
+            <p class="prompt__time"><time datetime="2026-10-27T20:09">Tue 27 Oct, 20:09</time></p>
+            <h3>A real product, honestly labelled</h3>
+            <blockquote>“Treat this as a real pre-launch product page for a concept product. … Hero small line becomes: ‘Concept product. Demo runs on invented sample data.’”</blockquote>
+            <p class="prompt__led"><strong>Led to:</strong> the honest framing used across the whole page.</p>
+          </li>
+          <li class="prompt">
+            <p class="prompt__time"><time datetime="2026-10-27T20:26">Tue 27 Oct, 20:26</time></p>
+            <h3>The demo, end to end, with WhatsApp on the coach's terms</h3>
+            <blockquote>“Use click-to-chat links … with URL-encoded text and NO phone number … Never store or show phone numbers. … IN-APP NOTIFICATIONS FOR THE COACH (no WhatsApp from students)”</blockquote>
+            <p class="prompt__led"><strong>Led to:</strong> the working demo (data and rules, student view, coach view) committed in three steps within 11 minutes.</p>
+          </li>
+          <li class="prompt">
+            <p class="prompt__time"><time datetime="2026-10-27T20:49">Tue 27 Oct, 20:49</time></p>
+            <h3>The phone bug</h3>
+            <blockquote>“The demo works on laptop but shows nothing on my phone … Fix this before anything else … Never parse date strings like ‘2026-10-28 12:00’ …”</blockquote>
+            <p class="prompt__led"><strong>Led to:</strong> cache-busting, iPhone-safe code rules written into the brief, and an on-screen error safety net.</p>
+          </li>
+          <li class="prompt">
+            <p class="prompt__time"><time datetime="2026-10-27T21:06">Tue 27 Oct, 21:06</time></p>
+            <h3>Oss, Tap out and late-cancel fees</h3>
+            <blockquote>“Rename the student's confirm button to ‘Oss’ (confirm) and cancel to ‘Tap out’. … Late-cancel fee: Off / Flagged students only / Everyone. … TESTS: run these at 375px and report each”</blockquote>
+            <p class="prompt__led"><strong>Led to:</strong> fees, the “Needs a nudge” flag, coach settings and student cards, plus the habit of asking for specific tests every round.</p>
+          </li>
+          <li class="prompt">
+            <p class="prompt__time"><time datetime="2026-10-30T17:03">Fri 30 Oct, 17:03</time></p>
+            <h3>Real user testing</h3>
+            <blockquote>“New round, based on real user testing. … DOUBLE BOOKING (found in testing: two students in two browsers both booked and both confirmed the same slot) … BLACK BELT COLOUR SCHEME”</blockquote>
+            <p class="prompt__led"><strong>Led to:</strong> the last-second slot check, live updates between tabs, honest wording about the limit, the new colour scheme, and the access, data and hint sections.</p>
+          </li>
+          <li class="prompt">
+            <p class="prompt__time"><time datetime="2026-10-30T17:29">Fri 30 Oct, 17:29</time></p>
+            <h3>The club owner's requests</h3>
+            <blockquote>“PACKS OF 10 OR 20 SESSIONS … MONTHLY MONEY SUMMARY … Add a ‘Download CSV’ button that downloads that month's records to the device (nothing is sent anywhere).”</blockquote>
+            <p class="prompt__led"><strong>Led to:</strong> packs with sessions remaining, homework and video links, and a monthly summary checked against an independent count.</p>
+          </li>
+          <li class="prompt">
+            <p class="prompt__time"><time datetime="2026-10-30T17:53">Fri 30 Oct, 17:53</time></p>
+            <h3>Show the work, honestly</h3>
+            <blockquote>“Build it from [the build log], but strip anything private … HONESTY AUDIT OF THE WHOLE LANDING PAGE … Fix anything that's none of those.”</blockquote>
+            <p class="prompt__led"><strong>Led to:</strong> this page, the filled-in “We tested it” section and four wording fixes on the main page.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Timeline -->
+    <section class="section" id="timeline" aria-labelledby="timeline-title">
+      <div class="container">
+        <p class="eyebrow">Timeline</p>
+        <h2 id="timeline-title">Build timeline</h2>
+        <p>From the Claude Code session logs and the code history. Times are Irish time.</p>
+        <dl class="timeline-facts">
+          <div><dt>Started</dt><dd>27 Oct, 20:07</dd></div>
+          <div><dt>Finished</dt><dd>30 Oct, 18:02</dd></div>
+          <div><dt>Prompts to Claude Code</dt><dd>13</dd></div>
+          <div><dt>Commits</dt><dd>13</dd></div>
+        </dl>
+        <p>Two working sessions: about 70 minutes on the evening of 27 October, and about 60 minutes on the afternoon of 30 October, with user testing in between.</p>
+        <ol class="timeline">
+          <li><time datetime="2026-10-27T20:07">27 Oct 20:07</time><span>Brief written into the project before any code.</span></li>
+          <li><time datetime="2026-10-27T20:10">27 Oct 20:10</time><span>Code repository created and published.</span></li>
+          <li><time datetime="2026-10-27T20:13">27 Oct 20:13</time><span>Landing page structure and styles: all ten sections.</span></li>
+          <li><time datetime="2026-10-27T20:22">27 Oct 20:22</time><span>Requirements table cut to six; “Built with AI” footer line removed.</span></li>
+          <li><time datetime="2026-10-27T20:37">27 Oct 20:37</time><span>Working demo: data and rules, student view, coach view with notifications and WhatsApp.</span></li>
+          <li><time datetime="2026-10-27T20:51">27 Oct 20:51</time><span>Fix for the blank demo on a real iPhone.</span></li>
+          <li><time datetime="2026-10-27T21:03">27 Oct 21:03</time><span>Build log moved out of the public code.</span></li>
+          <li><time datetime="2026-10-27T21:17">27 Oct 21:17</time><span>Oss / Tap out, late-cancel fees, “Needs a nudge”, settings and student cards.</span></li>
+          <li><time datetime="2026-10-30T17:12">30 Oct 17:12</time><span>Changes from user testing: double-booking fix, black belt colours, access, data and hint sections.</span></li>
+          <li><time datetime="2026-10-30T17:40">30 Oct 17:40</time><span>Club owner requests: packs, homework and video links, monthly money summary.</span></li>
+          <li><time datetime="2026-10-30T18:02">30 Oct 18:02</time><span>“We tested it” filled in, this page, and the honesty check.</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Honesty check -->
+    <section class="section section--alt" id="honesty" aria-labelledby="honesty-title">
+      <div class="container">
+        <p class="eyebrow">Honesty check</p>
+        <h2 id="honesty-title">Honesty check of the main page</h2>
+        <p>Every claim on the main page was checked and sorted into one of three groups. Anything that fitted none of them was fixed.</p>
+        <ul class="found">
+          <li>
+            <h3>True of the demo</h3>
+            <p>The hero promise and the “Concept product” line; the three steps; “How students get in”; all six requirement rows; the demo's text, hint strip and labels; “What we changed” in testing; “This demo” in Your data; the waiting-list note that nothing is sent or saved; the footer.</p>
+          </li>
+          <li>
+            <h3>Labelled Planned</h3>
+            <p>The club-wide version; cross-phone booking sync (shared server); one-tap sign-in links; the full “Coming later” list; the “When it launches” data plan; coach sign-up.</p>
+          </li>
+          <li>
+            <h3>Labelled assumption</h3>
+            <p>The €9 a month price, the first month free, and the reasoning behind them; who it's for; how coaches cope today (from our own experience, not a survey).</p>
+          </li>
+          <li>
+            <h3>Also labelled</h3>
+            <p>The four problem quotes are marked “Illustrative quotes, invented”. The two alternatives are sourced, linked and marked “Checked 27 Oct 2026”. “Our view” is labelled as an opinion.</p>
+          </li>
+          <li>
+            <h3>Fixed during the check</h3>
+            <ul class="tested__list">
+              <li>Step 2 said nobody else could take a booked slot. That's now qualified: it works between tabs on one device, and across phones needs the shared server (Planned).</li>
+              <li>The waiting list said “we'll let you know”, but the form saves nothing. It now says sign-up isn't open yet (Planned).</li>
+              <li>“Who it's for” and “How coaches cope today” are now labelled as assumptions.</li>
+              <li>“We tested it” was a placeholder. It's now filled in.</li>
+            </ul>
+          </li>
+          <li>
+            <h3>Confirmed</h3>
+            <ul class="tested__list">
+              <li>No testimonials, ratings, customer counts or statistics presented as real.</li>
+              <li>No logos. Gymdesk and BJJNote are named as text for comparison. WhatsApp and Revolut are named as plain text because the product works with them. The footer says all four are not affiliated.</li>
+              <li>No real personal data: every coach, academy, student, price and booking in the demo is invented.</li>
+              <li>The waiting-list form sends nothing: it has no destination, and submitting only shows a thank-you.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p class="brand brand--footer"><span class="brand__belt" aria-hidden="true"></span><span class="brand__name">Side Control</span></p>
+      <p>Side Control is a concept product in development. The coach, academy, students, prices and bookings shown are invented sample data. Gymdesk, BJJNote, WhatsApp and Revolut are named for comparison or description only and are not affiliated with Side Control.</p>
+      <p class="footer__links"><a href="index.html">Back to Side Control</a></p>
+    </div>
+  </footer>
+</body>
+</html>
