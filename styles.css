@@ -1220,3 +1220,25 @@ img, svg { max-width: 100%; display: block; }
 .packs-ov__meta { margin: 2px 0 0; font-size: 15px; color: var(--muted); }
 .packs-ov__row .btn { flex: none; }
 .demo__version { display: inline-block; font-weight: 600; color: var(--ink); }
+
+/* ---------- Sample students panel (inside the hint strip) and name badges ---------- */
+.samples { margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--line-dark); }
+.samples__title { margin: 0 0 var(--s2); font-weight: 700; }
+.samples__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.samples__list li { display: grid; grid-template-columns: 96px 1fr; gap: var(--s3); align-items: start; }
+.samples__list span { padding-top: 10px; line-height: 1.4; }
+.samples__name {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 var(--s3);
+  border: 1px solid var(--on-dark-muted);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 700 16px/1 var(--font-body);
+  cursor: pointer;
+}
+.samples__name::after { content: " ›"; color: var(--red); }
+.samples__name:hover { background: var(--white); }
+.namebadges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.namebadges .tag { font-size: 12px; padding: 1px 8px; }

@@ -12,7 +12,7 @@
   const HOUR = 60 * MIN;
   const DAY = 24 * HOUR;
   const SESSION = HOUR; // every private lesson is 60 minutes
-  const APP_VERSION = "9";  // shown on the page as "Demo v9": keep in step with app.js?v=9 in index.html
+  const APP_VERSION = "10"; // shown on the page as "Demo v10": keep in step with app.js?v=10 in index.html
   const DATA_VERSION = 3;// bump when the saved shape changes, so old data is replaced by fresh sample data
 
   // Coach settings, and what "Reset sample data" puts back
@@ -685,6 +685,14 @@
     return `<span class="belt belt--${key}" aria-hidden="true"></span>${esc(belt)}`;
   }
 
+  // Small badges shown next to a student's name in the coach's lists (coach view only)
+  function nameBadges(sid) {
+    const p = shownPack(sid);
+    const left = p ? packLeft(p) : 0;
+    const badges = (p && left > 0 ? tag(`Pack: ${left} left`, "pack") : "") + (needsNudge(sid) ? tag("Needs a nudge", "nudge") : "");
+    return badges ? `<span class="namebadges">${badges}</span>` : "";
+  }
+
   // Pack status for one student, worked out from the bookings
   function packWarning(p) {
     if (!p) return "";
@@ -931,7 +939,6 @@
     if (isTomorrow(b)) tags.push(tag("Tomorrow", "tomorrow"));
     tags.push(b.confirmed ? tag("Confirmed", "ok") : tag("Not confirmed yet", "muted"));
     const nudge = isUpcoming(b) && needsNudge(s.id);
-    if (nudge) tags.push(tag("Needs a nudge", "nudge"));
     if (isUpcoming(b) && payUpfrontFor(s.id)) {
       tags.push(tag("Pay upfront required", "upfront"));
       body += `<p class="item__sub">Taking the payment in the app is <span class="tag tag--planned">Planned</span>. For now, collect it before the session.</p>`;
@@ -960,7 +967,7 @@
       body += cancelAsk(b);
     }
     return item({
-      when: whenLabel(b.start), who: `${esc(s.name)} · ${beltLabel(s.belt)}`, price: b.packId ? "Pack<span>1 session</span>" : money(b.price),
+      when: whenLabel(b.start), who: `${esc(s.name)} · ${beltLabel(s.belt)}${nameBadges(s.id)}`, price: b.packId ? "Pack<span>1 session</span>" : money(b.price),
       tags, body, actions, cls: isTomorrow(b) ? "item--tomorrow" : ""
     });
   }
@@ -993,7 +1000,7 @@
     const cancelHTML = cancelled.length ? `<h4 class="dm-sub">Recent cancellations</h4><ul class="list">${cancelled.map((b) => {
       const s = student(b.studentId);
       return item({
-        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name), price: b.packId ? "Pack" : money(b.price),
+        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name) + nameBadges(s.id), price: b.packId ? "Pack" : money(b.price),
         tags: cancelTags(b),
         body: `<p class="item__sub">Cancelled by ${b.cancelledBy === "coach" ? "you" : "the student"}, ${Math.max(0, Math.round((b.start - b.cancelledAt) / HOUR))} hours before the start.</p>`,
         cls: "item--cancelled"
@@ -1119,7 +1126,7 @@
     const packsDue = unpaidPacks().sort((a, b) => a.boughtAt - b.boughtAt);
     const packsPaid = state.packs.filter((p) => p.paid && p.paidAt > now() - 21 * DAY).sort((a, b) => b.paidAt - a.paidAt);
     const packItem = (p, isPaid) => item({
-      when: `${p.size}-session pack`, who: `${esc(student(p.studentId).name)} · bought ${fmtDate(p.boughtAt)}`, price: money(p.price),
+      when: `${p.size}-session pack`, who: `${esc(student(p.studentId).name)} · bought ${fmtDate(p.boughtAt)}${nameBadges(p.studentId)}`, price: money(p.price),
       tags: isPaid ? [tag(`Paid · ${p.paid}`, "ok")] : [tag("Unpaid", "unpaid")], cls: isPaid ? "" : "item--unpaid",
       actions: isPaid
         ? `<button type="button" class="btn btn--small btn--quiet" data-action="undo-pack-paid" data-pack="${p.id}">Undo</button>`
@@ -1132,7 +1139,7 @@
     const owingHTML = owing.map(({ b, fee }) => {
       const s = student(b.studentId);
       return item({
-        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name), price: money(fee ? b.fee.amount : b.price),
+        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name) + nameBadges(s.id), price: money(fee ? b.fee.amount : b.price),
         tags: fee ? [tag("Late-cancel fee", "unpaid"), tag("Unpaid", "unpaid")] : [tag("Unpaid", "unpaid")],
         body: fee ? `<p class="item__sub">${b.fee.pct}% of the ${money(b.price)} session. Locked when ${esc(first(s))} tapped out.</p>` : "",
         cls: "item--unpaid", actions: payButtons(b, fee)
@@ -1140,7 +1147,7 @@
     }).join("");
 
     const paidHTML = paid.map(({ b, fee }) => item({
-      when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(student(b.studentId).name), price: money(fee ? b.fee.amount : b.price),
+      when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(student(b.studentId).name) + nameBadges(b.studentId), price: money(fee ? b.fee.amount : b.price),
       tags: fee ? [tag("Late-cancel fee", "muted"), tag(`Paid · ${b.fee.paid}`, "ok")] : [tag(`Paid · ${b.paid}`, "ok")],
       actions: `<button type="button" class="btn btn--small btn--quiet" data-action="${fee ? "undo-fee-paid" : "undo-paid"}" data-id="${b.id}">Undo</button>`
     })).join("");
@@ -1198,7 +1205,7 @@
       const tags = isTodo ? [tag("Needs notes", "notes")] : [];
       if (isUnpaid(b)) tags.push(tag("Unpaid", "unpaid"));
       return item({
-        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name) + " · " + beltLabel(s.belt), tags,
+        when: `${fmtDate(b.start)}, ${fmtTime(b.start)}`, who: esc(s.name) + " · " + beltLabel(s.belt) + nameBadges(s.id), tags,
         body: editing ? notesEditor(b) : (isTodo ? "" : notesBody(b)),
         actions: editing ? "" : `<button type="button" class="btn ${isTodo ? "btn--primary" : "btn--small btn--quiet"}" data-action="open-notes" data-id="${b.id}">${isTodo ? "Log notes" : "Edit"}</button>`
       });
@@ -1585,6 +1592,33 @@
       clearTransient();
       saveUI();
       render();
+    });
+
+    // "Sample students worth a look": each name jumps straight to that student
+    const samples = document.querySelector(".samples");
+    if (samples) samples.addEventListener("click", (event) => {
+      const el = event.target.closest("[data-jump]");
+      if (!el) return;
+      const sid = el.dataset.sid;
+      if (!student(sid)) return;
+      reloadFromStorage();
+      clearTransient();
+      ui.flash = null;
+      if (el.dataset.jump === "coach-card") {
+        ui.view = "coach";
+        ui.coachTab = "students";
+        ui.cardFor = sid;
+        ui.focus = `[data-action="student-card"][data-sid="${sid}"]`;
+      } else {
+        ui.view = "student";
+        ui.studentId = sid;
+      }
+      saveUI();
+      render();
+      // Bring the student into view: the card for the coach, the top of the demo for Next Stripe
+      const target = ui.view === "coach" ? app.querySelector("#card-" + sid) : document.querySelector(".demo__controls");
+      if (target && target.scrollIntoView) target.scrollIntoView({ block: "start" });
+      if (ui.view === "student") { app.setAttribute("tabindex", "-1"); app.focus({ preventScroll: true }); }
     });
 
     // Another tab on this device changed the data (a booking, a cancellation, a reset...): refresh this one

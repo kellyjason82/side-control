@@ -173,9 +173,9 @@ Each must be visibly met in the demo or honestly marked "Planned".
 
 ## Behind the build page (notes.html)
 - A separate public page, same design as the main page (shares `styles.css`), readable at 375px, linked from the main footer as "Behind the build".
-- Sections: How it was built ("Prompts were drafted with Claude in a separate chat, then run and refined in Claude Code."), Key decisions (what changed, why, who drove it: Me, Claude chat or Claude Code, marking where AI suggestions were overruled), What testing found, Prompts that mattered (6 to 8, with time, trimmed excerpt and what it led to), Build timeline, Honesty check.
+- Sections: How it was built ("Prompts were drafted with Claude in a separate chat, then run and refined in Claude Code."), Key decisions (what changed, why, who drove it: Me, Claude chat or Claude Code, marking where AI suggestions were overruled), What testing found, Prompts that mattered (6 to 8, with time, trimmed excerpt and what it led to), Honesty check. No Build timeline section (removed at the founder's request).
 - Built from the private build log with everything private stripped: no college, course or assignment; no real academy, instructor or tester names; no file paths; no personal details. Excerpts from the Claude Code session logs are trimmed, with [brackets] for privacy edits.
-- Keep the timeline (finish time, prompt and commit counts) and the honesty check up to date when the main page changes.
+- Keep the honesty check up to date when the main page changes.
 
 ## Honesty audit labels
 - Every claim on index.html is one of: true of the demo, labelled Planned, or labelled Assumption. "Who it's for" and "How coaches cope today" carry an Assumption label. Alternatives are sourced and dated; quotes are labelled invented.
@@ -184,3 +184,5 @@ Each must be visibly met in the demo or honestly marked "Planned".
 - Packs: a "Packs" block at the top of the coach's Diary lists every student with a pack in use, with the low-sessions warning and a "Card" button to their student card. Also on the student card (Students tab) and in that student's Next Stripe view (Tomás in the sample data).
 - Money tab: the "This month" summary is at the very top, with Download CSV under it, then "Owed to you, all time".
 - The "Try this" hint strip includes: "4. In Next Stripe, pick Tomás: his pack has 2 sessions left." and "5. In Coach › Money, see this month's takings and download a CSV."
+- "Sample students worth a look" panel, inside the "Try this" strip (dismissed together with it): Tomás (10-session pack, 2 left) and Aoife (standard rate) jump to their Next Stripe view; Conor (late-cancelled twice, "Needs a nudge", pay upfront required, coach view only) jumps to his card in Coach › Students.
+- In the coach's lists (Diary, Money, Notes), small badges sit next to student names, worked out from the data: "Pack: N left" for a student with pack sessions left, "Needs a nudge" for a flagged student. Never shown in Next Stripe.

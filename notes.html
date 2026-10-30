@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Behind the build: Side Control</title>
-  <meta name="description" content="How Side Control, a concept private-lesson book for BJJ coaches, was built: key decisions, what testing found, the prompts that shaped it, a timeline and an honesty check.">
+  <meta name="description" content="How Side Control, a concept private-lesson book for BJJ coaches, was built: key decisions, what testing found, the prompts that shaped it and an honesty check.">
   <meta name="theme-color" content="#1b1d21">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body class="notes">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -35,7 +35,6 @@
           <li><a href="#decisions">Key decisions</a></li>
           <li><a href="#testing">Testing</a></li>
           <li><a href="#prompts">Prompts that mattered</a></li>
-          <li><a href="#timeline">Timeline</a></li>
           <li><a href="#honesty">Honesty check</a></li>
         </ul>
       </div>
@@ -210,7 +209,7 @@
       <div class="container">
         <p class="eyebrow">Prompts</p>
         <h2 id="prompts-title">Prompts that mattered</h2>
-        <p>Eight of the fourteen prompts run in Claude Code, picked from its session logs. Excerpts are trimmed; “…” marks a cut and [brackets] mark a small edit for privacy. Times are Irish time.</p>
+        <p>Eight of the prompts run in Claude Code, picked from its session logs. Excerpts are trimmed; “…” marks a cut and [brackets] mark a small edit for privacy. Times are Irish time.</p>
         <ol class="prompts">
           <li class="prompt">
             <p class="prompt__time"><time datetime="2026-10-27T20:07">Tue 27 Oct, 20:07</time></p>
@@ -264,38 +263,9 @@
       </div>
     </section>
 
-    <!-- Timeline -->
-    <section class="section" id="timeline" aria-labelledby="timeline-title">
-      <div class="container">
-        <p class="eyebrow">Timeline</p>
-        <h2 id="timeline-title">Build timeline</h2>
-        <p>From the Claude Code session logs and the code history. Times are Irish time.</p>
-        <dl class="timeline-facts">
-          <div><dt>Started</dt><dd>27 Oct, 20:07</dd></div>
-          <div><dt>Finished</dt><dd>30 Oct, 18:28</dd></div>
-          <div><dt>Prompts to Claude Code</dt><dd>14</dd></div>
-          <div><dt>Commits</dt><dd>15</dd></div>
-        </dl>
-        <p>Two working sessions: about 70 minutes on the evening of 27 October, and about 85 minutes on the afternoon of 30 October, with user testing in between.</p>
-        <ol class="timeline">
-          <li><time datetime="2026-10-27T20:07">27 Oct 20:07</time><span>Brief written into the project before any code.</span></li>
-          <li><time datetime="2026-10-27T20:10">27 Oct 20:10</time><span>Code repository created and published.</span></li>
-          <li><time datetime="2026-10-27T20:13">27 Oct 20:13</time><span>Landing page structure and styles: all ten sections.</span></li>
-          <li><time datetime="2026-10-27T20:22">27 Oct 20:22</time><span>Requirements table cut to six; “Built with AI” footer line removed.</span></li>
-          <li><time datetime="2026-10-27T20:37">27 Oct 20:37</time><span>Working demo: data and rules, student view, coach view with notifications and WhatsApp.</span></li>
-          <li><time datetime="2026-10-27T20:51">27 Oct 20:51</time><span>Fix for the blank demo on a real iPhone.</span></li>
-          <li><time datetime="2026-10-27T21:03">27 Oct 21:03</time><span>Build log moved out of the public code.</span></li>
-          <li><time datetime="2026-10-27T21:17">27 Oct 21:17</time><span>Oss / Tap out, late-cancel fees, “Needs a nudge”, settings and student cards.</span></li>
-          <li><time datetime="2026-10-30T17:12">30 Oct 17:12</time><span>Changes from user testing: double-booking fix, black belt colours, access, data and hint sections.</span></li>
-          <li><time datetime="2026-10-30T17:40">30 Oct 17:40</time><span>Club owner requests: packs, homework and video links, monthly money summary.</span></li>
-          <li><time datetime="2026-10-30T18:02">30 Oct 18:02</time><span>“We tested it” filled in, this page, and the honesty check.</span></li>
-          <li><time datetime="2026-10-30T18:27">30 Oct 18:27</time><span>Fixes from a real iPhone test: a readable belt logo, packs and the monthly summary easier to find, a visible version number.</span></li>
-        </ol>
-      </div>
-    </section>
 
     <!-- Honesty check -->
-    <section class="section section--alt" id="honesty" aria-labelledby="honesty-title">
+    <section class="section" id="honesty" aria-labelledby="honesty-title">
       <div class="container">
         <p class="eyebrow">Honesty check</p>
         <h2 id="honesty-title">Honesty check of the main page</h2>
